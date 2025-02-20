@@ -10,20 +10,19 @@ def hello_world():
 
 @app.route('/query', methods=['POST'])
 def main():
-    # pdf_upload(path = 'AMB-After-Visit-Summary.PDF',
-    #     session_id = 'comp150-cdr-2025s-Ic636oMxYQJviNamr6P6DAmWO45leqi3ZRcBLrl2',
-    #     strategy = 'smart')
+    pdf_upload(path = 'AMB-After-Visit-Summary.PDF',
+        session_id = 'comp150-cdr-2025s-Ic636oMxYQJviNamr6P6DAmWO45leqi3ZRcBLrl2',
+        strategy = 'smart')
     
-    # pdf_upload(path = 'Past-Visit-Details.pdf',
-    #     session_id = 'comp150-cdr-2025s-Ic636oMxYQJviNamr6P6DAmWO45leqi3ZRcBLrl2',
-    #     strategy = 'smart')
+    pdf_upload(path = 'Past-Visit-Details.pdf',
+        session_id = 'comp150-cdr-2025s-Ic636oMxYQJviNamr6P6DAmWO45leqi3ZRcBLrl2',
+        strategy = 'smart')
     
-    sys_instructions = """Respond to everything in all capital letters"""
-    # """Review the medical records I have provided. Summarize
-    # them in language that is accessible for a general audience and not using
-    # overly technical medical vocabulary. Present recommendations for how I can
-    # augment my diet in order to avoid future related medical issues. Include 
-    # information about specific nutrients."""
+    sys_instructions = """You are a medical assistant. Review the medical records I have provided. Summarize
+    them in language that is accessible for a general audience and not using
+    overly technical medical vocabulary. Present recommendations for how I can
+    augment my diet in order to avoid future related medical issues. Include 
+    information about specific nutrients."""
 
     data = request.get_json() 
 
