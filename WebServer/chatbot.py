@@ -5,9 +5,9 @@ if __name__ == '__main__':
         session_id = 'comp150-cdr-2025s-Ic636oMxYQJviNamr6P6DAmWO45leqi3ZRcBLrl2',
         strategy = 'smart')
     
-    pdf_upload(path = 'ED-After-Visit-Summary.PDF',
-        session_id = 'comp150-cdr-2025s-Ic636oMxYQJviNamr6P6DAmWO45leqi3ZRcBLrl2',
-        strategy = 'smart')
+    # pdf_upload(path = 'ED-After-Visit-Summary.PDF',
+    #     session_id = 'comp150-cdr-2025s-Ic636oMxYQJviNamr6P6DAmWO45leqi3ZRcBLrl2',
+    #     strategy = 'smart')
     
     pdf_upload(path = 'Past-Visit-Details.pdf',
         session_id = 'comp150-cdr-2025s-Ic636oMxYQJviNamr6P6DAmWO45leqi3ZRcBLrl2',
@@ -40,6 +40,8 @@ if __name__ == '__main__':
             rag_k=5)
         
         print("Response: ", chat_res['response'])
-        print("RAG Context: ", chat_res['rag_context'])
+        if chat_res['rag_context']:
+            print("Used RAG context")
+            # print("RAG Context: ", chat_res['rag_context'])
         session_num += 1
         question = input("Prompt: ")

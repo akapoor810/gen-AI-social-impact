@@ -10,6 +10,21 @@ def hello_world():
 
 @app.route('/query', methods=['POST'])
 def main():
+    pdf_upload(path = 'AMB-After-Visit-Summary.PDF',
+        session_id = 'comp150-cdr-2025s-Ic636oMxYQJviNamr6P6DAmWO45leqi3ZRcBLrl2',
+        strategy = 'smart')
+    
+    pdf_upload(path = 'Past-Visit-Details.pdf',
+        session_id = 'comp150-cdr-2025s-Ic636oMxYQJviNamr6P6DAmWO45leqi3ZRcBLrl2',
+        strategy = 'smart')
+    
+    sys_instructions = """Respond to everything in all capital letters"""
+    # """Review the medical records I have provided. Summarize
+    # them in language that is accessible for a general audience and not using
+    # overly technical medical vocabulary. Present recommendations for how I can
+    # augment my diet in order to avoid future related medical issues. Include 
+    # information about specific nutrients."""
+
     data = request.get_json() 
 
     # Extract relevant information
@@ -24,17 +39,7 @@ def main():
 
     print(f"Message from {user} : {message}")
 
-    sys_instructions = """Review the medical records I have provided. Summarize
-    them in language that is accessible for a general audience and not using
-    overly technical medical vocabulary. Present recommendations for how I can
-    augment my diet in order to avoid future related medical issues. Include 
-    information about specific nutrients."""
-    
-    # Ask the user if they want any recommendations for recipes to achieve the
-    # nutrient goals you outline. If they respond yes, formulate a string in the 
-    # following format: 'QUERY: """
 
-    print("Hi! How can I help you today?")
     # Generate a response using LLMProxy
     response = generate(
         model='4o-mini',
@@ -42,7 +47,10 @@ def main():
         query= message,
         temperature=0.0,
         lastk=0,
-        session_id='GenericSession'
+        session_id='comp150-cdr-2025s-Ic636oMxYQJviNamr6P6DAmWO45leqi3ZRcBLrl2',
+        rag_usage=True,
+        rag_threshold='0.3',
+        rag_k=5
     )
 
     response_text = response['response']
@@ -57,16 +65,4 @@ def page_not_found(e):
     return "Not Found", 404
 
 if __name__ == "__main__":
-    pdf_upload(path = 'AMB-After-Visit-Summary.PDF',
-        session_id = 'comp150-cdr-2025s-Ic636oMxYQJviNamr6P6DAmWO45leqi3ZRcBLrl2',
-        strategy = 'smart')
-    
-    pdf_upload(path = 'ED-After-Visit-Summary.PDF',
-        session_id = 'comp150-cdr-2025s-Ic636oMxYQJviNamr6P6DAmWO45leqi3ZRcBLrl2',
-        strategy = 'smart')
-    
-    pdf_upload(path = 'Past-Visit-Details.pdf',
-        session_id = 'comp150-cdr-2025s-Ic636oMxYQJviNamr6P6DAmWO45leqi3ZRcBLrl2',
-        strategy = 'smart')
-    
     app.run()
