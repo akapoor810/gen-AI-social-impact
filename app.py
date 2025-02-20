@@ -10,13 +10,13 @@ def hello_world():
 
 @app.route('/query', methods=['POST'])
 def main():
-    pdf_upload(path = 'AMB-After-Visit-Summary.PDF',
-        session_id = 'comp150-cdr-2025s-Ic636oMxYQJviNamr6P6DAmWO45leqi3ZRcBLrl2',
-        strategy = 'smart')
+    # pdf_upload(path = 'AMB-After-Visit-Summary.PDF',
+    #     session_id = 'comp150-cdr-2025s-Ic636oMxYQJviNamr6P6DAmWO45leqi3ZRcBLrl2',
+    #     strategy = 'smart')
     
-    pdf_upload(path = 'Past-Visit-Details.pdf',
-        session_id = 'comp150-cdr-2025s-Ic636oMxYQJviNamr6P6DAmWO45leqi3ZRcBLrl2',
-        strategy = 'smart')
+    # pdf_upload(path = 'Past-Visit-Details.pdf',
+    #     session_id = 'comp150-cdr-2025s-Ic636oMxYQJviNamr6P6DAmWO45leqi3ZRcBLrl2',
+    #     strategy = 'smart')
     
     sys_instructions = """Respond to everything in all capital letters"""
     # """Review the medical records I have provided. Summarize
