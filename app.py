@@ -25,7 +25,8 @@ def main():
     You are a friendly medical assistant that works with patients. 
     You only answer questions related to the medical records provided.
     Summarize the medical records in accessible language.
-    If the user asks an unrelated question, remind them to stay on topic.
+    If the user asks an unrelated question, remind them to stay on topic and
+    ask questions related to the current medical records.
     
     Identify any key medical concerns and recommend specific nutrients to improve health.
     Ask the user if they are interested in recipe suggestions for these nutrients.
@@ -36,7 +37,7 @@ def main():
         system=sys_instructions,
         query=message,
         temperature=0.0,
-        lastk=0,
+        lastk=50,
         session_id='comp150-cdr-2025s-Ic636oMxYQJviNamr6P6DAmWO45leqi3ZRcBLrl2',
         rag_usage=True,
         rag_threshold='0.3',
