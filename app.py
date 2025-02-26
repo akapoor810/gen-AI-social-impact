@@ -145,8 +145,9 @@ def agent_email(query):
     example usage: send_email('xyz@gmail.com', 'greetings', 'hi, I hope you are well'). Once
     you have all the parameters to send an email, ask the user to confirm they want to send
     the email by typing "Confirm". 
-    If the user types "Confirm," return send_email(dst, subject, content) with
-    the parameters filled in appropriately.
+    If the user types "Confirm," begin your response with 
+    "send_email(dst, subject, content)" with the parameters filled in 
+    appropriately.
 
     """
     if not query:
