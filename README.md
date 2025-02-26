@@ -14,3 +14,11 @@ This folder contains an example of a web application (app.py) using Flask and LL
         response_main = requests.get("https://replace_with_your_web_server_link")
         response_llmproxy = requests.post("https://replace_with_your_web_server_link/query", json=data)
     2. Run the test file locally on your machine and you should receive two responses from the web application and LLMProxy respectively.
+
+
+##### Agentic Workflow
+1. User interacts with LLM, asking questions about medical records
+2. If they want to send an email, the AI agent is triggered to send their 
+diagnosis in an email to anyone
+3. Need to keep a dictionary of user IDs from Rocketchat and the corresponding
+session ID

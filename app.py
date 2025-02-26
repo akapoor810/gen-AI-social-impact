@@ -1,51 +1,135 @@
-import os
 import requests
 from flask import Flask, request, jsonify
-from llmproxy import generate
+from llmproxy import *
+from example_agent_tool import extract_tool
 
 app = Flask(__name__)
+
+@app.route('/')
+def hello_world():
+    return jsonify({"text": 'Hello from Koyeb - you reached the main page!'})
 
 @app.route('/query', methods=['POST'])
 def main():
     data = request.get_json()
     user = data.get("user_name", "Unknown")
     message = data.get("text", "")
-    user_id = data.get("user_id")
     
     if data.get("bot") or not message:
         return jsonify({"status": "ignored"})
     
     print(f"Message from {user}: {message}")
-    
+
+    # Generate medical summary and nutritional recommendations
     sys_instructions = """
-    You are a friendly medical assistant that works with patients.
+    You are a friendly medical assistant that works with patients. Use an
+    encouraging and uplifting tone to empathize with patients going through
+    the recovery process.
+
     You only answer questions related to the medical records provided.
     Summarize the medical records in accessible language. Do not include any
-    personal identification information of the patient, only information
-    related to their injury or illness diagnosis.
-    Do not include Medical Record Number (MRN) or Clinical Service Number (CSN).
+    personal identification information of the patient, including
+    Medical Record Number (MRN) and Clinical Service Number (CSN).
+    Only include information related to their injury or illness diagnosis.
     If the user asks an unrelated question, remind them to stay on topic and
     ask questions related to the current medical records.
-    Keep your responses relatively short, between 2-4 sentences. Use an
-    encouraging and engaging tone to uplift patients during this time of recovery.
-    """
     
+    After helping a user understand their medical records, ask them if they 
+    would like to share their results in an email with someone. Ask them to
+    respond with either "No thanks" or "Yes, send email." Then continue the 
+    conversation related to the patient's medical history.
+    """
+
     response = generate(
         model='4o-mini',
         system=sys_instructions,
         query=message,
         temperature=0.0,
         lastk=50,
-        session_id=f"session-{user_id}",
+        session_id='comp150-cdr-2025s-Ic636oMxYQJviNamr6P6DAmWO45leqi3ZRcBLrl2',
         rag_usage=True,
         rag_threshold='0.3',
         rag_k=5
     )
-    
-    response_text = response['response']
 
-@app.route('/share', methods=['POST'])
-def agent_email():
+    if "Yes send email" or "Yes, send email" or "Send email" in response:
+        # Need to substitute X with someone's name
+        query = """
+        Send an email to X requesting an extension on asg1?
+        Use the tools provided if you want
+        """
+        while True:
+            print("here")
+            response = agent_email(query)
+
+            # print Response
+            print(response)
+
+            user_input = input("Enter Y to continue, N to exit, or provide hint to agent: ").strip().upper()
+            if user_input == 'N':
+                break
+            elif user_input == 'Y':
+
+                # extract tool from agent_email's response
+                tool = extract_tool(response)
+
+                # if tool found, execute it using `eval`
+                # https://docs.python.org/3/library/functions.html#eval
+                if tool:
+                    response = eval(tool)
+                    print(f"Output from tool: {response}\n\n")        
+            else:
+                response = user_input
+
+            # Response becomes input for next iteration 
+            query = response
+
+    response_text = response['response']
+    
+    return jsonify({"text": response_text})
+
+
+def send_email(src, dst, subject, content):
+    import smtplib
+    from email.mime.text import MIMEText
+    from email.mime.multipart import MIMEMultipart
+    import json
+ 
+    # Email configuration
+    smtp_server = "smtp-tls.eecs.tufts.edu"  # e.g., mail.yourdomain.com
+    smtp_port = 587  # Usually 587 for TLS, 465 for SSL
+    sender_email = "akapoo02@eecs.tufts.edu"
+    receiver_email = dst
+
+
+    # Add email password to config.json
+    with open('config.json', 'r') as file:
+        config = json.load(file)
+
+    password = config['password']
+
+    # Create the email message
+    msg = MIMEMultipart()
+    msg["From"] = sender_email
+    msg["To"] = receiver_email
+    msg["Subject"] = subject
+
+    body = content
+    msg.attach(MIMEText(body, "plain"))
+
+    # Send email
+    try:
+        server = smtplib.SMTP(smtp_server, smtp_port)
+        server.starttls()  # Secure the connection (use only if the server supports TLS)
+        server.login(sender_email, password)
+        server.sendmail(sender_email, receiver_email, msg.as_string())
+        server.quit()
+        return "Email sent successfully!"
+    except Exception as e:
+        return f"Error: {e}" 
+
+# agent program to handle user requests
+def agent_email(query):
     system = """
     You are an AI agent designed to handle user requests.
     In addition to your own intelligence, you are given access to a set of tools.
@@ -63,12 +147,7 @@ def agent_email():
     ##1. Tool to send an email
     Name: send_email
     Parameters: src, dst, subject, content
-    example usage: send_email('abc@gmail.com', 'xyz@gmail.com', 'greetings', 'hi, I hope you are well')"""
-
-    
-    query = """
-    Send an email to X to patient's medical information?
-    Use the tools provided if you want
+    example usage: send_email('abc@gmail.com', 'xyz@gmail.com', 'greetings', 'hi, I hope you are well')
     """
 
     response = generate(model = '4o-mini',
@@ -80,21 +159,19 @@ def agent_email():
         rag_usage = False)
 
     try:
+        print(response)
         return response['response']
+        return response
     except Exception as e:
         print(f"Error occured with parsing output: {response}")
         raise e
-    return 
-    
-    # user_result = "Your medical summary is ready."
-    
-    # send_email(email, "Your Medical Summary", user_result)
-    
-    # return jsonify({"text": "Your results have been shared via email!"})
+
+    r = send_email(None, "", "test sibject", "this is test context")
+
 
 @app.errorhandler(404)
 def page_not_found(e):
     return "Not Found", 404
 
 if __name__ == "__main__":
-    app.run(threaded=True)
+    app.run()
