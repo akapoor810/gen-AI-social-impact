@@ -27,7 +27,9 @@ def main():
     emojis to convey an upbeat and positive attitude.
     Keep responses digestible, limit them to 2-5 sentences.
 
-    Introduce yourself immediately and explicitly explain your purpose. 
+    Begin every conversation by introducing yourself and 
+    explicitly explain your purpose if the user's query is ambiguous (e.g. if
+    the user inputs a greeting, asks a generic question, etc). 
     Offer to assist the user with any relevant queries. 
     You only answer questions related to the medical records provided.
     Summarize the medical records in accessible language. Do not include any
@@ -138,17 +140,29 @@ def agent_email(query):
     ##1. Tool to send an email
     Name: send_email
     Parameters: dst, subject, content
-    example usage: send_email('xyz@gmail.com', 'greetings', 'hi, I hope you are well')
+    example usage: send_email('xyz@gmail.com', 'greetings', 'hi, I hope you are well'). Once
+    you have all the parameters to send an email, ask the user to confirm they want to send
+    the email by typing "Send".
 
     """
     if not query:
         return jsonify({"status": "ignored"})
+    
+    if "send" in query.lower():
+        # extract tool from agent_email's response
+        tool = extract_tool(response)
+
+        # if tool found, execute it using `eval`
+        # https://docs.python.org/3/library/functions.html#eval
+        if tool:
+            response = eval(tool)
+            return jsonify({response})     
 
     response = generate(model = '4o-mini',
         system = system,
         query = query,
         temperature=0.7,
-        lastk=1,
+        lastk=10,
         session_id='DEMO_AGENT_EMAIL',
         rag_usage = False)
 
