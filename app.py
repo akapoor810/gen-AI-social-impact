@@ -142,9 +142,9 @@ def agent_email(query):
     ##1. Tool to send an email
     Name: send_email
     Parameters: dst, subject, content
-    example usage: send_email('xyz@gmail.com', 'greetings', 'hi, I hope you are well'). Once
-    you have all the parameters to send an email, ask the user to confirm they want to send
-    the email by typing "Confirm". 
+    example usage: send_email('xyz@gmail.com', 'greetings', 'hi, I hope you are well'). 
+    Once you have all the parameters to send an email, ask the user to confirm 
+    they want to send the email by typing "Confirm". 
     If the user types "Confirm," begin your response with 
     "send_email(dst, subject, content)" with the parameters filled in 
     appropriately.
@@ -157,7 +157,7 @@ def agent_email(query):
         system = system,
         query = query,
         temperature=0.7,
-        lastk=1,
+        lastk=5,
         session_id='comp150-cdr-2025s-Ic636oMxYQJviNamr6P6DAmWO45leqi3ZRcBLrl2',
         rag_usage = False)
 
