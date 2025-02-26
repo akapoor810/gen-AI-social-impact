@@ -47,10 +47,11 @@ def main():
 
     if "email" in message.lower():
         response = agent_email(message)
-        query = """
-        Send an email to the intended recipient sharing your medical information.
-        Use the tools provided if you want.
-        """
+        
+        tool = extract_tool(response)
+        if tool in extract_tool(response):
+            response = eval(tool)
+
         # Response becomes input for next iteration 
         # message = response
         response_text = response
@@ -147,23 +148,13 @@ def agent_email(query):
     """
     if not query:
         return jsonify({"status": "ignored"})
-    
-    if "confirm" in query.lower():
-        # extract tool from agent_email's response
-        tool = extract_tool(response)
-
-        # if tool found, execute it using `eval`
-        # https://docs.python.org/3/library/functions.html#eval
-        if tool:
-            response = eval(tool)
-            return jsonify({response})     
 
     response = generate(model = '4o-mini',
         system = system,
         query = query,
         temperature=0.7,
         lastk=10,
-        session_id='DEMO_AGENT_EMAIL',
+        session_id='comp150-cdr-2025s-Ic636oMxYQJviNamr6P6DAmWO45leqi3ZRcBLrl2',
         rag_usage = False)
 
     try:
