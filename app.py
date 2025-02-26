@@ -48,9 +48,9 @@ def main():
     if "email" in message.lower():
         response = agent_email(message)
         
-        tool = extract_tool(response)
-        if tool in extract_tool(response):
-            response = eval(tool)
+        # tool = extract_tool(response)
+        # if extract_tool(response):
+        #     response = eval(tool)
 
         # Response becomes input for next iteration 
         # message = response
