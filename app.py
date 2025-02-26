@@ -44,37 +44,17 @@ def main():
     """
 
     if "email" in message.lower():
-        # Need to substitute X with someone's name
+        response = agent_email(message)
         query = """
-        Send an email to X sharing the patient's medical information
-        Use the tools provided if you want
+        Send an email to the intended recipient sharing your medical information.
+        Use the tools provided if you want.
         """
-        while True:
-            print("sending email")
-            response = agent_email(query)
+        # Response becomes input for next iteration 
+        # message = response
+        response_text = response
 
-            # print Response
-            print(response)
+        return jsonify({"text": response_text})
 
-            user_input = input("Enter Y to continue, N to exit, or provide hint to agent: ").strip().upper()
-            if user_input == 'N':
-                break
-            elif user_input == 'Y':
-
-                # extract tool from agent_email's response
-                tool = extract_tool(response)
-
-                # if tool found, execute it using `eval`
-                # https://docs.python.org/3/library/functions.html#eval
-                if tool:
-                    response = eval(tool)
-                    print(f"Output from tool: {response}\n\n")        
-            else:
-                response = user_input
-
-            # Response becomes input for next iteration 
-            query = response
-            
     response = generate(
         model='4o-mini',
         system=sys_instructions,
@@ -90,6 +70,9 @@ def main():
     response_text = response['response']
     
     return jsonify({"text": response_text})
+
+
+
 
 # Tool to send an email
 # This has been written based on the Tufts EECS email infrastructure
@@ -163,7 +146,7 @@ def agent_email(query):
         system = system,
         query = query,
         temperature=0.7,
-        lastk=10,
+        lastk=1,
         session_id='DEMO_AGENT_EMAIL',
         rag_usage = False)
 
@@ -173,7 +156,6 @@ def agent_email(query):
     except Exception as e:
         print(f"Error occured with parsing output: {response}")
         raise e
-
 
 
 @app.errorhandler(404)
