@@ -69,7 +69,7 @@ if __name__ == '__main__':
 
     max_iterations = 1
 
-    i=0;
+    i=0
     while i < max_iterations:
 
         # flip between agent coder and QA
