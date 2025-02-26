@@ -1,13 +1,9 @@
 import requests
 from flask import Flask, request, jsonify
 from llmproxy import generate
-from example_send_msg_to_rc import send_email, send_typing_indicator  # Added typing indicator function
-import threading
+from example_send_msg_to_rc import send_email
 
 app = Flask(__name__)
-
-# Store user session data
-task_sessions = {}
 
 @app.route('/query', methods=['POST'])
 def main():
@@ -20,9 +16,6 @@ def main():
         return jsonify({"status": "ignored"})
     
     print(f"Message from {user}: {message}")
-    
-    # Show typing indicator
-    send_typing_indicator(user_id, typing=True)
     
     sys_instructions = """
     You are a friendly medical assistant that works with patients.
@@ -51,23 +44,11 @@ def main():
     
     response_text = response['response']
     
-    # Stop typing indicator
-    send_typing_indicator(user_id, typing=False)
-    
-    # Store session response
-    task_sessions[user_id] = response_text
-    
     return jsonify({
         "text": response_text,
         "attachments": [{
-            "text": "Would you like a human to review your results before sharing via email?",
+            "text": "Would you like to share your results via email?",
             "actions": [
-                {
-                    "type": "button",
-                    "text": "Request Human Review",
-                    "msg": f"/review {user_id}",
-                    "msg_in_chat_window": True
-                },
                 {
                     "type": "button",
                     "text": "Share via Email",
@@ -78,43 +59,20 @@ def main():
         }]
     })
 
-@app.route('/review', methods=['POST'])
-def request_human_review():
-    data = request.get_json()
-    user_id = data.get("user_id")
-    
-    if user_id not in task_sessions:
-        return jsonify({"text": "No results found for review."})
-    
-    user_result = task_sessions[user_id]
-    
-    return jsonify({"text": "A human assistant will review your response shortly.", "attachments": [{
-        "text": f"Review needed for user {user_id}: {user_result}",
-        "actions": [{
-            "type": "button",
-            "text": "Approve and Send",
-            "msg": f"/approve {user_id}",
-            "msg_in_chat_window": True
-        }]
-    }]})
-
-@app.route('/approve', methods=['POST'])
-def approve_and_send():
+@app.route('/share', methods=['POST'])
+def share_via_email():
     data = request.get_json()
     user_id = data.get("user_id")
     email = data.get("email")
     
-    if user_id not in task_sessions:
-        return jsonify({"text": "No results found to share."})
+    if not email:
+        return jsonify({"text": "Please provide an email address to send the results."})
     
-    user_result = task_sessions[user_id]
+    user_result = "Your medical summary is ready."
     
-    def send_email_task():
-        send_email(email, "Your Medical Summary", user_result)
+    send_email(email, "Your Medical Summary", user_result)
     
-    threading.Thread(target=send_email_task).start()
-    
-    return jsonify({"text": "Your results have been approved and shared via email!"})
+    return jsonify({"text": "Your results have been shared via email!"})
 
 @app.errorhandler(404)
 def page_not_found(e):
