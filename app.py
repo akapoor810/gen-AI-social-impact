@@ -2,7 +2,6 @@ import os
 import requests
 from flask import Flask, request, jsonify
 from llmproxy import generate
-# from example_send_msg_to_rc import send_email
 
 app = Flask(__name__)
 
@@ -12,8 +11,6 @@ def main():
     user = data.get("user_name", "Unknown")
     message = data.get("text", "")
     user_id = data.get("user_id")
-
-    print('apikey', os.environ.get("apiKey"), '\nendpoint', os.environ.get("endPoint"))
     
     if data.get("bot") or not message:
         return jsonify({"status": "ignored"})
@@ -46,21 +43,6 @@ def main():
     )
     
     response_text = response['response']
-    
-    # return jsonify({
-    #     "text": response_text,
-    #     "attachments": [{
-    #         "text": "Would you like to share your results via email?",
-    #         "actions": [
-    #             {
-    #                 "type": "button",
-    #                 "text": "Share via Email",
-    #                 "msg": f"/share {user_id}",
-    #                 "msg_in_chat_window": True
-    #             }
-    #         ]
-    #     }]
-    # })
 
 @app.route('/share', methods=['POST'])
 def agent_email():
