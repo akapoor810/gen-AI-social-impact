@@ -156,7 +156,7 @@ def agent_email(query):
         system = system,
         query = query,
         temperature=0.7,
-        lastk=10,
+        lastk=1,
         session_id='comp150-cdr-2025s-Ic636oMxYQJviNamr6P6DAmWO45leqi3ZRcBLrl2',
         rag_usage = False)
 
