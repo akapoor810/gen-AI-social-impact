@@ -50,21 +50,15 @@ def main():
 
     if "email" in message.lower():
         response = agent_email(message)
-        
-        response_text = response
-        return jsonify({"text": response_text})
+        return jsonify({"text": response})
     
     if "confirm" in message.lower():
         response = agent_email(message)
         
         tool = extract_tool(response)
-        if extract_tool(response):
-            response = eval(tool)
-
-        # Response becomes input for next iteration 
-        # message = response
-        response_text = response
-        return jsonify({"text": response_text})
+        # if tool:
+        response = eval(tool)
+        return jsonify({"text": response})
 
     response = generate(
         model='4o-mini',
@@ -79,7 +73,6 @@ def main():
     )
 
     response_text = response['response']
-    
     return jsonify({"text": response_text})
 
 
