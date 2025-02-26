@@ -1,3 +1,4 @@
+import os
 import requests
 from flask import Flask, request, jsonify
 from llmproxy import generate
@@ -11,6 +12,8 @@ def main():
     user = data.get("user_name", "Unknown")
     message = data.get("text", "")
     user_id = data.get("user_id")
+
+    print('apikey', os.environ.get("apiKey"), '\nendpoint', os.environ.get("endPoint"))
     
     if data.get("bot") or not message:
         return jsonify({"status": "ignored"})
