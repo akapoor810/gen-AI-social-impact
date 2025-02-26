@@ -141,6 +141,8 @@ def agent_email(query):
     example usage: send_email('xyz@gmail.com', 'greetings', 'hi, I hope you are well')
 
     """
+    if not query:
+        return jsonify({"status": "ignored"})
 
     response = generate(model = '4o-mini',
         system = system,
@@ -151,7 +153,6 @@ def agent_email(query):
         rag_usage = False)
 
     try:
-        print(response)
         return response['response']
     except Exception as e:
         print(f"Error occured with parsing output: {response}")
