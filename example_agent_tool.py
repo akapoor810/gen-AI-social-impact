@@ -35,7 +35,7 @@ def send_email(src, dst, subject, content):
     # Email configuration
     smtp_server = "smtp-tls.eecs.tufts.edu"  # e.g., mail.yourdomain.com
     smtp_port = 587  # Usually 587 for TLS, 465 for SSL
-    sender_email = src
+    sender_email = "akapoo02@eecs.tufts.edu"
     receiver_email = dst
 
 
@@ -151,7 +151,8 @@ def agent_email(query):
         rag_usage = False)
 
     try:
-        # return response['response']
+        print(response)
+        return response['response']
         return response
     except Exception as e:
         print(f"Error occured with parsing output: {response}")
@@ -162,14 +163,17 @@ def agent_email(query):
 if __name__ == '__main__':
 
 
+    r = send_email(None, "", "test sibject", "this is test context")
+    print(r)
+
     # Need to substitute X with someone's name
     query = """
     Send an email to X requesting an extension on asg1?
     Use the tools provided if you want
     """
-
+    import sys
     while True:
-        
+        print("here")
         response = agent_email(query)
 
         # print Response

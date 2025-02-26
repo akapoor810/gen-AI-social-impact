@@ -44,20 +44,20 @@ def main():
     
     response_text = response['response']
     
-    return jsonify({
-        "text": response_text,
-        "attachments": [{
-            "text": "Would you like to share your results via email?",
-            "actions": [
-                {
-                    "type": "button",
-                    "text": "Share via Email",
-                    "msg": f"/share {user_id}",
-                    "msg_in_chat_window": True
-                }
-            ]
-        }]
-    })
+    # return jsonify({
+    #     "text": response_text,
+    #     "attachments": [{
+    #         "text": "Would you like to share your results via email?",
+    #         "actions": [
+    #             {
+    #                 "type": "button",
+    #                 "text": "Share via Email",
+    #                 "msg": f"/share {user_id}",
+    #                 "msg_in_chat_window": True
+    #             }
+    #         ]
+    #     }]
+    # })
 
 @app.route('/share', methods=['POST'])
 def agent_email():
@@ -101,11 +101,11 @@ def agent_email():
         raise e
     return 
     
-    user_result = "Your medical summary is ready."
+    # user_result = "Your medical summary is ready."
     
-    send_email(email, "Your Medical Summary", user_result)
+    # send_email(email, "Your Medical Summary", user_result)
     
-    return jsonify({"text": "Your results have been shared via email!"})
+    # return jsonify({"text": "Your results have been shared via email!"})
 
 @app.errorhandler(404)
 def page_not_found(e):
