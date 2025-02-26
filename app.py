@@ -71,7 +71,7 @@ def main():
         system=sys_instructions,
         query=message,
         temperature=0.0,
-        lastk=0,
+        lastk=10,
         session_id='comp150-cdr-2025s-Ic636oMxYQJviNamr6P6DAmWO45leqi3ZRcBLrl2',
         rag_usage=True,
         rag_threshold='0.3',
