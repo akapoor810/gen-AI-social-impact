@@ -45,7 +45,7 @@ def main():
     conversation related to the patient's medical history.
 
     If the user wants to send the prepared draft of the email, ask them to 
-    confirm sending by responding with "Confirm send".
+    confirm sending by responding with "Confirm".
     """
 
     if "email" in message.lower():
@@ -54,7 +54,7 @@ def main():
         response_text = response
         return jsonify({"text": response_text})
     
-    if "confirm send" in message.lower():
+    if "confirm" in message.lower():
         response = agent_email(message)
         
         tool = extract_tool(response)
@@ -71,7 +71,7 @@ def main():
         system=sys_instructions,
         query=message,
         temperature=0.0,
-        lastk=10,
+        lastk=0,
         session_id='comp150-cdr-2025s-Ic636oMxYQJviNamr6P6DAmWO45leqi3ZRcBLrl2',
         rag_usage=True,
         rag_threshold='0.3',
