@@ -151,7 +151,8 @@ def agent_email(query):
         rag_usage = False)
 
     try:
-        return response['response']
+        # return response['response']
+        return response
     except Exception as e:
         print(f"Error occured with parsing output: {response}")
         raise e

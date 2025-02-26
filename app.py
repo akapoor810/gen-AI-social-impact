@@ -60,13 +60,46 @@ def main():
     })
 
 @app.route('/share', methods=['POST'])
-def share_via_email():
-    data = request.get_json()
-    user_id = data.get("user_id")
-    email = data.get("email")
+def agent_email():
+    system = """
+    You are an AI agent designed to handle user requests.
+    In addition to your own intelligence, you are given access to a set of tools.
+
+    Think step-by-step, breaking down the task into a sequence small steps.
+
+    If you can't resolve the query based on your intelligence, ask the user to execute a tool on your behalf and share the results with you.
+    If you want the user to execute a tool on your behalf, strictly only respond with the tool's name and parameters.
+    Example response for using tool: websearch('weather in boston today')
+
+    The name of the provided tools and their parameters are given below.
+    The output of tool execution will be shared with you so you can decide your next steps.
+
+    ### PROVIDED TOOLS INFORMATION ###
+    ##1. Tool to send an email
+    Name: send_email
+    Parameters: src, dst, subject, content
+    example usage: send_email('abc@gmail.com', 'xyz@gmail.com', 'greetings', 'hi, I hope you are well')"""
+
     
-    if not email:
-        return jsonify({"text": "Please provide an email address to send the results."})
+    query = """
+    Send an email to X to patient's medical information?
+    Use the tools provided if you want
+    """
+
+    response = generate(model = '4o-mini',
+        system = system,
+        query = query,
+        temperature=0.7,
+        lastk=10,
+        session_id='DEMO_AGENT_EMAIL',
+        rag_usage = False)
+
+    try:
+        return response['response']
+    except Exception as e:
+        print(f"Error occured with parsing output: {response}")
+        raise e
+    return 
     
     user_result = "Your medical summary is ready."
     
