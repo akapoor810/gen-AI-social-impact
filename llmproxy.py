@@ -3,7 +3,7 @@ import json
 import requests
 
 # Read proxy config from environment
-# end_point =  "https://a061igc186.execute-api.us-east-1.amazonaws.com/dev
+# end_point =  "https://a061igc186.execute-api.us-east-1.amazonaws.com/dev"
 # api_key = "comp150-cdr-2025s-4srlRlceWnukwewcCw7vm7wLygCvdipGNEWgiRRs"
 end_point = os.environ.get("endPoint")
 api_key = os.environ.get("apiKey")
@@ -39,8 +39,8 @@ def generate(
 
     msg = None
 
-    print(end_point)
-    print(api_key)
+    print("endpoint", os.environ.get("endPoint"))
+    print("apikey", os.environ.get("apiKey"))
     try:
         response = requests.post(end_point, headers=headers, json=request)
 
