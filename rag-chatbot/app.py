@@ -29,7 +29,7 @@ def chat():
             query = question,
             temperature=0.0,
             lastk=session_num,
-            session_id='comp150-cdr-2025s-Ic636oMxYQJviNamr6P6DAmWO45leqi3ZRcBLrl2',
+            session_id='rag-id',
             rag_usage=True,
             rag_threshold='0.3',
             rag_k=5
@@ -44,23 +44,23 @@ def chat():
 
 if __name__ == '__main__':
     pdf_upload(path = 'cracking-the-coding-interview.pdf',
-        session_id = 'comp150-cdr-2025s-Ic636oMxYQJviNamr6P6DAmWO45leqi3ZRcBLrl2',
+        session_id = 'rag-id',
         strategy = 'smart')
     
     pdf_upload(path = 'system-design-interview.pdf',
-        session_id = 'comp150-cdr-2025s-Ic636oMxYQJviNamr6P6DAmWO45leqi3ZRcBLrl2',
+        session_id = 'rag-id',
         strategy = 'smart')
     
     pdf_upload(path = 'sean-prashad-patterns.pdf',
-        session_id = 'comp150-cdr-2025s-Ic636oMxYQJviNamr6P6DAmWO45leqi3ZRcBLrl2',
+        session_id = 'rag-id',
         strategy = 'smart')
     
     pdf_upload(path = 'designgurus-system-design.pdf',
-        session_id = 'comp150-cdr-2025s-Ic636oMxYQJviNamr6P6DAmWO45leqi3ZRcBLrl2',
+        session_id = 'rag-id',
         strategy = 'smart')
     
     pdf_upload(path = 'algomaster-patterns.pdf',
-        session_id = 'comp150-cdr-2025s-Ic636oMxYQJviNamr6P6DAmWO45leqi3ZRcBLrl2',
+        session_id = 'rag-id',
         strategy = 'smart')
     
     app.run(debug=True)

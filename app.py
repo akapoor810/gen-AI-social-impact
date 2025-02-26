@@ -56,8 +56,8 @@ def main():
         response = agent_email(message)
         
         tool = extract_tool(response)
-        # if tool:
-        response = eval(tool)
+        if tool:
+            response = eval(tool)
         return jsonify({"text": response})
 
     response = generate(
@@ -144,7 +144,9 @@ def agent_email(query):
     Parameters: dst, subject, content
     example usage: send_email('xyz@gmail.com', 'greetings', 'hi, I hope you are well'). Once
     you have all the parameters to send an email, ask the user to confirm they want to send
-    the email by typing "Confirm".
+    the email by typing "Confirm". 
+    If the user types "Confirm," return send_email(dst, subject, content) with
+    the parameters filled in appropriately.
 
     """
     if not query:

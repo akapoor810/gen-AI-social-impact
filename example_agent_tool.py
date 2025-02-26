@@ -25,7 +25,7 @@ def extract_tool(text):
 # Tool to send an email
 # This has been written based on the Tufts EECS email infrastructure
 # Can be modified for other email clients (e.g., gmail, yahoo)
-def send_email(src, dst, subject, content):
+def send_email(dst, subject, content):
 
     import os, smtplib
     from email.mime.text import MIMEText
@@ -37,8 +37,6 @@ def send_email(src, dst, subject, content):
     smtp_port = 587  # Usually 587 for TLS, 465 for SSL
     sender_email = "akapoo02@eecs.tufts.edu"
     receiver_email = dst
-
-
 
     # Add email password to config.json
     with open('config.json', 'r') as file:
@@ -125,8 +123,8 @@ def agent_email(query):
     ### PROVIDED TOOLS INFORMATION ###
     ##1. Tool to send an email
     Name: send_email
-    Parameters: src, dst, subject, content
-    example usage: send_email('abc@gmail.com', 'xyz@gmail.com', 'greetings', 'hi, I hope you are well')
+    Parameters: dst, subject, content
+    example usage: send_email('xyz@gmail.com', 'greetings', 'hi, I hope you are well')
 
 
     ##2. Tool to perform a websearch and get top 5 webpage links based on input query. This is useful to get information about people, topics etc.
@@ -161,7 +159,7 @@ def agent_email(query):
 
 
 if __name__ == '__main__':
-    r = send_email("akapoo02@eecs.tufts.edu", "anika.kapoor810@gmail.com", "test subject", "this is test context")
+    r = send_email("anika.kapoor810@gmail.com", "test subject", "this is test context")
     print("r: ", r)
 
     # Need to substitute X with someone's name

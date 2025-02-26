@@ -17,6 +17,7 @@ def extract_tool(text):
 
     match = re.search(r'send_email\([^)]*\)', text)
     if match:
+        print(match.group())
         return match.group() 
 
     return
