@@ -43,19 +43,27 @@ def main():
     would like to share their results in an email with someone. Ask them to
     respond with either "No" or "Yes, send email." Then continue the 
     conversation related to the patient's medical history.
+
+    If the user wants to send the prepared draft of the email, ask them to 
+    confirm sending by responding with "Confirm send".
     """
 
     if "email" in message.lower():
         response = agent_email(message)
         
-        # tool = extract_tool(response)
-        # if extract_tool(response):
-        #     response = eval(tool)
+        response_text = response
+        return jsonify({"text": response_text})
+    
+    if "confirm send" in message.lower():
+        response = agent_email(message)
+        
+        tool = extract_tool(response)
+        if extract_tool(response):
+            response = eval(tool)
 
         # Response becomes input for next iteration 
         # message = response
         response_text = response
-
         return jsonify({"text": response_text})
 
     response = generate(
