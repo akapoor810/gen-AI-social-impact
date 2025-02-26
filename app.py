@@ -142,13 +142,13 @@ def agent_email(query):
     Parameters: dst, subject, content
     example usage: send_email('xyz@gmail.com', 'greetings', 'hi, I hope you are well'). Once
     you have all the parameters to send an email, ask the user to confirm they want to send
-    the email by typing "Send".
+    the email by typing "Confirm".
 
     """
     if not query:
         return jsonify({"status": "ignored"})
     
-    if "send" in query.lower():
+    if "confirm" in query.lower():
         # extract tool from agent_email's response
         tool = extract_tool(response)
 
