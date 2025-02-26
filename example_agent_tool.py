@@ -170,7 +170,6 @@ if __name__ == '__main__':
     Use the tools provided if you want
     """
     while True:
-        print("here")
         response = agent_email(query)
 
         # print Response
