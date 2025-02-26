@@ -2,7 +2,7 @@ import os
 import requests
 from flask import Flask, request, jsonify
 from llmproxy import generate
-from example_send_msg_to_rc import send_email
+# from example_send_msg_to_rc import send_email
 
 app = Flask(__name__)
 
