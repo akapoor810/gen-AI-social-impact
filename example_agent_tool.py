@@ -27,7 +27,7 @@ def extract_tool(text):
 # Can be modified for other email clients (e.g., gmail, yahoo)
 def send_email(src, dst, subject, content):
 
-    import smtplib
+    import os, smtplib
     from email.mime.text import MIMEText
     from email.mime.multipart import MIMEMultipart
     import json
@@ -37,6 +37,7 @@ def send_email(src, dst, subject, content):
     smtp_port = 587  # Usually 587 for TLS, 465 for SSL
     sender_email = "akapoo02@eecs.tufts.edu"
     receiver_email = dst
+
 
 
     # Add email password to config.json
@@ -63,6 +64,7 @@ def send_email(src, dst, subject, content):
         server.quit()
         return "Email sent successfully!"
     except Exception as e:
+        print("there was an error")
         return f"Error: {e}" 
 
 
@@ -153,25 +155,20 @@ def agent_email(query):
     try:
         print(response)
         return response['response']
-        return response
     except Exception as e:
         print(f"Error occured with parsing output: {response}")
         raise e
-    return 
 
 
 if __name__ == '__main__':
-
-
-    r = send_email(None, "", "test sibject", "this is test context")
-    print(r)
+    r = send_email("akapoo02@eecs.tufts.edu", "anika.kapoor810@gmail.com", "test subject", "this is test context")
+    print("r: ", r)
 
     # Need to substitute X with someone's name
     query = """
     Send an email to X requesting an extension on asg1?
     Use the tools provided if you want
     """
-    import sys
     while True:
         print("here")
         response = agent_email(query)
