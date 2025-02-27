@@ -143,6 +143,7 @@ def main():
     
     if "confirm" in message.lower():
         response = agent_email(message, sid)
+        print("confirming:", response)
         
         tool = extract_tool(response)
         if tool:
