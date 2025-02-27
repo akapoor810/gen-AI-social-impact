@@ -231,5 +231,6 @@ if __name__ == "__main__":
         strategy = 'smart')
     
     sleep(20)
+    print("hi")
     
     app.run()
