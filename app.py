@@ -138,11 +138,11 @@ def main():
     # return jsonify({"text": response_text})
 
     if "email" in message.lower():
-        response = agent_email(message)
+        response = agent_email(message, sid)
         return jsonify({"text": response})
     
     if "confirm" in message.lower():
-        response = agent_email(message)
+        response = agent_email(message, sid)
         
         tool = extract_tool(response)
         if tool:
