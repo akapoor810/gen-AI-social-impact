@@ -17,6 +17,17 @@ def hello_world():
 
 @app.route('/query', methods=['POST'])
 def main():
+    pdf_upload(path = 'AMB-After-Visit-Summary.PDF',
+        session_id = 'RAG',
+        strategy = 'smart')
+    
+    pdf_upload(path = 'Past-Visit-Details.pdf',
+        session_id = 'RAG',
+        strategy = 'smart')
+    
+    sleep(20)
+    
+
     data = request.get_json()
     user = data.get("user_name", "Unknown")
     message = data.get("text", "")
@@ -222,15 +233,4 @@ def page_not_found(e):
     return "Not Found", 404
 
 if __name__ == "__main__":
-    pdf_upload(path = 'AMB-After-Visit-Summary.PDF',
-        session_id = 'RAG',
-        strategy = 'smart')
-    
-    pdf_upload(path = 'Past-Visit-Details.pdf',
-        session_id = 'RAG',
-        strategy = 'smart')
-    
-    sleep(20)
-    print("hi")
-    
     app.run()
