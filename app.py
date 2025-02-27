@@ -29,11 +29,11 @@ def main():
 
     # RAG
     pdf_upload(path = 'AMB-After-Visit-Summary.PDF',
-        session_id = 'sid',
+        session_id = sid,
         strategy = 'smart')
     
     pdf_upload(path = 'Past-Visit-Details.pdf',
-        session_id = 'sid',
+        session_id = sid,
         strategy = 'smart')
 
 
