@@ -68,7 +68,7 @@ def main():
 
     if "email" in message.lower():
     # or message == "yes_email": #respond with a button for possible further interaction
-        response_text = agent_email(message, sid)
+        response = agent_email(message, sid)
         return jsonify({"text": response})
         
         # response = { "text": response_text,
