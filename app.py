@@ -1,9 +1,15 @@
+from string import Template
+from time import sleep
 import requests
 from flask import Flask, request, jsonify
 from llmproxy import *
 from example_agent_tool import extract_tool
+from example_retrieve_and_generate import rag_context_string_simple
 
 app = Flask(__name__)
+
+# global variable to keep track of each user's session
+session_dict = {}
 
 @app.route('/')
 def hello_world():
@@ -18,7 +24,26 @@ def main():
     if data.get("bot") or not message:
         return jsonify({"status": "ignored"})
     
+
+    # get user's specific session ID
     print(f"Message from {user}: {message}")
+    if user not in session_dict:
+        session_dict[user] = "{user}-session"
+    sid = session_dict[user]
+
+
+    # upload RAG context from session_id = 'RAG'
+    rag_context = retrieve(
+        query = message,
+        session_id='RAG',
+        rag_threshold = '0.3',
+        rag_k = 5)
+
+    # combining query with rag_context
+    query_with_rag_context = Template("$query\n$rag_context").substitute(
+                            query = message,
+                            rag_context=rag_context_string_simple(rag_context))
+    
 
     sys_instructions = """
     You are a friendly medical assistant that works with patients. Use an
@@ -49,32 +74,56 @@ def main():
     queries. 
     """
 
-    if "email" in message.lower():
-        response = agent_email(message)
+    if "email" in message.lower() or message == "yes_email": #respond with a button for possible further interaction
+        response = agent_email(message, sid)
         return jsonify({"text": response})
-    
-    if "confirm" in message.lower():
-        response = agent_email(message)
         
-        tool = extract_tool(response)
-        if tool:
-            response = eval(tool)
-        return jsonify({"text": response})
+        response = {
+                    "attachments": [
+                            {
+                            "text": "You have selected: ✅ Yes!",
+                            "actions": [
+                                {
+                                "type": "button",
+                                "text": "Thanks for the feedback 😃",
+                                "msg": "post_yes_clicked",
+                                "msg_in_chat_window": True,
+                                "msg_processing_type": "sendMessage"
+                                }
+                            ]
+                            }
+                        ]
+                    }
+        
+        # if "confirm" in message.lower():
+    #     response = agent_email(message, sid)
+        
+    #     tool = extract_tool(response)
+    #     print("Confirming sending email: ", response, tool)
+    #     if tool:
+    #         response = eval(tool)
+    #     return jsonify({"text": response})
 
-    response = generate(
-        model='4o-mini',
-        system=sys_instructions,
-        query=message,
-        temperature=0.0,
-        lastk=3,
-        session_id='comp150-cdr-2025s-Ic636oMxYQJviNamr6P6DAmWO45leqi3ZRcBLrl2',
-        rag_usage=True,
-        rag_threshold='0.3',
-        rag_k=5
-    )
+    elif message == "no_email": # respond with a text
+        response = {
+                    "text": "You have selected: ❌ No. Ok! Let us know if you want to send an email in the future."
+        }
+    else:
+        #Generate a response (you can integrate with AI/chatbot here)
+        response = generate(
+            model='4o-mini',
+            system=sys_instructions,
+            query=query_with_rag_context,
+            temperature=0.0,
+            lastk=3,
+            session_id=sid,
+            rag_usage=False
+        )
 
-    response_text = response['response']
+        response_text = response['response']
+
     return jsonify({"text": response_text})
+
 
 
 
@@ -94,12 +143,7 @@ def send_email(dst, subject, content):
     smtp_port = 587  # Usually 587 for TLS, 465 for SSL
     sender_email = "akapoo02@eecs.tufts.edu"
     receiver_email = dst
-
-    # Add email password to config.json
-    with open('config.json', 'r') as file:
-        config = json.load(file)
-
-    password = config['password']
+    password = "anikacs@tufts810"
 
     # Create the email message
     msg = MIMEMultipart()
@@ -124,7 +168,7 @@ def send_email(dst, subject, content):
 
 
 # agent program to handle user requests
-def agent_email(query):
+def agent_email(query, sid):
     
     system = """
     You are an AI agent designed to handle user requests.
@@ -159,7 +203,7 @@ def agent_email(query):
         query = query,
         temperature=0.7,
         lastk=5,
-        session_id='comp150-cdr-2025s-Ic636oMxYQJviNamr6P6DAmWO45leqi3ZRcBLrl2',
+        session_id=sid,
         rag_usage = False)
 
     try:
@@ -169,9 +213,23 @@ def agent_email(query):
         raise e
 
 
+
+
+
+
 @app.errorhandler(404)
 def page_not_found(e):
     return "Not Found", 404
 
 if __name__ == "__main__":
+    pdf_upload(path = 'AMB-After-Visit-Summary.PDF',
+        session_id = 'RAG',
+        strategy = 'smart')
+    
+    pdf_upload(path = 'Past-Visit-Details.pdf',
+        session_id = 'RAG',
+        strategy = 'smart')
+    
+    sleep(20)
+    
     app.run()

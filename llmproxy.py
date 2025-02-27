@@ -2,16 +2,12 @@ import os
 import json
 import requests
 
-# Read proxy config from config.json
-with open('config.json', 'r') as file:
-    config = json.load(file)
+end_point = "https://a061igc186.execute-api.us-east-1.amazonaws.com/dev"
+api_key = "comp150-cdr-2025s-4srlRlceWnukwewcCw7vm7wLygCvdipGNEWgiRRs"
 
-end_point = config['endPoint']
-api_key = config['apiKey']
-
-end_point = os.environ.get("endPoint")
-api_key = os.environ.get("apiKey")
-print(os.environ.get("endPoint"), os.environ.get("apiKey"))
+# end_point = os.environ.get("endPoint")
+# api_key = os.environ.get("apiKey")
+# print(os.environ.get("endPoint"), os.environ.get("apiKey"))
 
 def retrieve(
     query: str,

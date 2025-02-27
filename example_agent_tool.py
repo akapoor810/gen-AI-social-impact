@@ -37,12 +37,7 @@ def send_email(dst, subject, content):
     smtp_port = 587  # Usually 587 for TLS, 465 for SSL
     sender_email = "akapoo02@eecs.tufts.edu"
     receiver_email = dst
-
-    # Add email password to config.json
-    with open('config.json', 'r') as file:
-        config = json.load(file)
-
-    password = config['password']
+    password = "anikacs@tufts810"
 
     # Create the email message
     msg = MIMEMultipart()
