@@ -143,8 +143,9 @@ def main():
                 ]
     }
 
-    response_text = response['response']
-    return jsonify({"text": response_text})
+    return jsonify({"text": response})
+    # response_text = response['response']
+    # return jsonify({"text": response_text})
 
 
 
