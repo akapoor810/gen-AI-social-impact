@@ -26,6 +26,17 @@ def main():
         session_dict[user] = "{user}-session"
     sid = session_dict[user]
 
+
+    # RAG
+    pdf_upload(path = 'AMB-After-Visit-Summary.PDF',
+        session_id = 'sid',
+        strategy = 'smart')
+    
+    pdf_upload(path = 'Past-Visit-Details.pdf',
+        session_id = 'sid',
+        strategy = 'smart')
+
+
     sys_instructions = """
     You are a friendly medical assistant that works with patients. Use an
     encouraging and uplifting tone to empathize with patients going through
@@ -34,7 +45,7 @@ def main():
     Keep responses digestible, limit them to 2-5 sentences. Make the UI of 
     your response aesthetically pleasing.
 
-    You only answer questions related to the medical records provided.
+    You only answer questions related to the medical records that are provided.
     Summarize the medical records in accessible language. Do not include any
     personal identification information of the patient, including
     Medical Record Number (MRN) and Clinical Service Number (CSN).
@@ -104,33 +115,33 @@ def main():
         rag_k=5
     )
 
-        # response_text = response['response']
-        # response = {
-        #             "text": response_text,
-        #             "attachments": [
-        #                 {
-        #                     "title": "Email Options",
-        #                     "text": "Would you like to email these results to someone?",
-        #                     "actions": [
-        #                         {
-        #                             "type": "button",
-        #                             "text": "✅ Yes",
-        #                             "msg": "yes_email",
-        #                             "msg_in_chat_window": True,
-        #                             "msg_processing_type": "sendMessage",
-        #                             "button_id": "yes_button"
-        #                         },
-        #                         {
-        #                             "type": "button",
-        #                             "text": "❌ No",
-        #                             "msg": "no_email",
-        #                             "msg_in_chat_window": True,
-        #                             "msg_processing_type": "sendMessage"
-        #                         }
-        #                     ]
-        #                 }
-        #             ]
-        # }
+    response_text = response['response']
+    response = {
+                "text": response_text,
+                "attachments": [
+                    {
+                        "title": "Email Options",
+                        "text": "Would you like to email these results to someone?",
+                        "actions": [
+                            {
+                                "type": "button",
+                                "text": "✅ Yes",
+                                "msg": "yes_email",
+                                "msg_in_chat_window": True,
+                                "msg_processing_type": "sendMessage",
+                                "button_id": "yes_button"
+                            },
+                            {
+                                "type": "button",
+                                "text": "❌ No",
+                                "msg": "no_email",
+                                "msg_in_chat_window": True,
+                                "msg_processing_type": "sendMessage"
+                            }
+                        ]
+                    }
+                ]
+    }
 
     response_text = response['response']
     return jsonify({"text": response_text})
