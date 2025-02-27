@@ -55,83 +55,85 @@ def main():
     queries. 
     """
 
-    if "email" in message.lower() or message == "yes_email": #respond with a button for possible further interaction
+    if "email" in message.lower():
+    # or message == "yes_email": #respond with a button for possible further interaction
         response_text = agent_email(message, sid)
+        return jsonify({"text": response})
         
-        response = { "text": response_text,
-                    "attachments": [
-                            {
-                            "text": "You have selected: ✅ Yes!",
-                            "actions": [
-                                {
-                                "type": "button",
-                                "text": "Thanks for the feedback 😃",
-                                "msg": "post_yes_clicked",
-                                "msg_in_chat_window": True,
-                                "msg_processing_type": "sendMessage"
-                                }
-                            ]
-                            }
-                        ]
-                    }
+        # response = { "text": response_text,
+        #             "attachments": [
+        #                     {
+        #                     "text": "You have selected: ✅ Yes!",
+        #                     "actions": [
+        #                         {
+        #                         "type": "button",
+        #                         "text": "Thanks for the feedback 😃",
+        #                         "msg": "post_yes_clicked",
+        #                         "msg_in_chat_window": True,
+        #                         "msg_processing_type": "sendMessage"
+        #                         }
+        #                     ]
+        #                     }
+        #                 ]
+        #             }
         
-        # if "confirm" in message.lower():
-    #     response = agent_email(message, sid)
+    if "confirm" in message.lower():
+        response = agent_email(message, sid)
         
-    #     tool = extract_tool(response)
-    #     print("Confirming sending email: ", response, tool)
-    #     if tool:
-    #         response = eval(tool)
-    #     return jsonify({"text": response})
+        tool = extract_tool(response)
+        print("Confirming sending email: ", response, tool)
+        if tool:
+            response = eval(tool)
+        return jsonify({"text": response})
 
-    elif message == "no_email": # respond with a text
-        response = {
-                    "text": "You have selected: ❌ No! Let us know if you want to send an email in the future."
-        }
-    else:
+    # elif message == "no_email": # respond with a text
+    #     response = {
+    #                 "text": "You have selected: ❌ No! Let us know if you want to send an email in the future."
+    #     }
+    # else:
         #Generate a response (you can integrate with AI/chatbot here)
-        response = generate(
-            model='4o-mini',
-            system=sys_instructions,
-            query=message,
-            temperature=0.0,
-            lastk=3,
-            session_id=sid,
-            rag_usage=True,
-            rag_threshold='0.3',
-            rag_k=5
-        )
+    response = generate(
+        model='4o-mini',
+        system=sys_instructions,
+        query=message,
+        temperature=0.0,
+        lastk=3,
+        session_id=sid,
+        rag_usage=True,
+        rag_threshold='0.3',
+        rag_k=5
+    )
 
-        response_text = response['response']
-        response = {
-                    "text": response_text,
-                    "attachments": [
-                        {
-                            "title": "Email Options",
-                            "text": "Would you like to email these results to someone?",
-                            "actions": [
-                                {
-                                    "type": "button",
-                                    "text": "✅ Yes",
-                                    "msg": "yes_email",
-                                    "msg_in_chat_window": True,
-                                    "msg_processing_type": "sendMessage",
-                                    "button_id": "yes_button"
-                                },
-                                {
-                                    "type": "button",
-                                    "text": "❌ No",
-                                    "msg": "no_email",
-                                    "msg_in_chat_window": True,
-                                    "msg_processing_type": "sendMessage"
-                                }
-                            ]
-                        }
-                    ]
-        }
+        # response_text = response['response']
+        # response = {
+        #             "text": response_text,
+        #             "attachments": [
+        #                 {
+        #                     "title": "Email Options",
+        #                     "text": "Would you like to email these results to someone?",
+        #                     "actions": [
+        #                         {
+        #                             "type": "button",
+        #                             "text": "✅ Yes",
+        #                             "msg": "yes_email",
+        #                             "msg_in_chat_window": True,
+        #                             "msg_processing_type": "sendMessage",
+        #                             "button_id": "yes_button"
+        #                         },
+        #                         {
+        #                             "type": "button",
+        #                             "text": "❌ No",
+        #                             "msg": "no_email",
+        #                             "msg_in_chat_window": True,
+        #                             "msg_processing_type": "sendMessage"
+        #                         }
+        #                     ]
+        #                 }
+        #             ]
+        # }
 
-    # response_text = response['response']
-    return jsonify({"text": response['response']})
+    response_text = response['response']
+    return jsonify({"text": response_text})
 
 
 
