@@ -25,7 +25,8 @@ def main():
     encouraging and uplifting tone to empathize with patients going through
     the recovery process. Make the response as engaging as possible and include
     emojis to convey an upbeat and positive attitude.
-    Keep responses digestible, limit them to 2-5 sentences.
+    Keep responses digestible, limit them to 2-5 sentences. Make the UI of 
+    your response aesthetically pleasing.
 
     You only answer questions related to the medical records provided.
     Summarize the medical records in accessible language. Do not include any
@@ -65,7 +66,7 @@ def main():
         system=sys_instructions,
         query=message,
         temperature=0.0,
-        lastk=10,
+        lastk=3,
         session_id='comp150-cdr-2025s-Ic636oMxYQJviNamr6P6DAmWO45leqi3ZRcBLrl2',
         rag_usage=True,
         rag_threshold='0.3',
