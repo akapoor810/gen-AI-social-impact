@@ -1,14 +1,11 @@
-from string import Template
-from time import sleep
 import requests
 from flask import Flask, request, jsonify
 from llmproxy import *
 from example_agent_tool import extract_tool
-from example_retrieve_and_generate import rag_context_string_simple
 
 app = Flask(__name__)
 
-# global variable to keep track of each user's session
+# global variable {user}
 session_dict = {}
 
 @app.route('/')
@@ -17,17 +14,6 @@ def hello_world():
 
 @app.route('/query', methods=['POST'])
 def main():
-    pdf_upload(path = 'AMB-After-Visit-Summary.PDF',
-        session_id = 'RAG',
-        strategy = 'smart')
-    
-    pdf_upload(path = 'Past-Visit-Details.pdf',
-        session_id = 'RAG',
-        strategy = 'smart')
-    
-    sleep(20)
-    
-
     data = request.get_json()
     user = data.get("user_name", "Unknown")
     message = data.get("text", "")
@@ -35,26 +21,10 @@ def main():
     if data.get("bot") or not message:
         return jsonify({"status": "ignored"})
     
-
-    # get user's specific session ID
     print(f"Message from {user}: {message}")
     if user not in session_dict:
         session_dict[user] = "{user}-session"
     sid = session_dict[user]
-
-
-    # upload RAG context from session_id = 'RAG'
-    rag_context = retrieve(
-        query = message,
-        session_id='RAG',
-        rag_threshold = '0.3',
-        rag_k = 5)
-
-    # combining query with rag_context
-    query_with_rag_context = Template("$query\n$rag_context").substitute(
-                            query = message,
-                            rag_context=rag_context_string_simple(rag_context))
-    
 
     sys_instructions = """
     You are a friendly medical assistant that works with patients. Use an
@@ -86,10 +56,9 @@ def main():
     """
 
     if "email" in message.lower() or message == "yes_email": #respond with a button for possible further interaction
-        response = agent_email(message, sid)
-        return jsonify({"text": response})
+        response_text = agent_email(message, sid)
         
-        response = {
+        response = { "text": response_text,
                     "attachments": [
                             {
                             "text": "You have selected: ✅ Yes!",
@@ -117,24 +86,52 @@ def main():
 
     elif message == "no_email": # respond with a text
         response = {
-                    "text": "You have selected: ❌ No. Ok! Let us know if you want to send an email in the future."
+                    "text": "You have selected: ❌ No! Let us know if you want to send an email in the future."
         }
     else:
         #Generate a response (you can integrate with AI/chatbot here)
         response = generate(
             model='4o-mini',
             system=sys_instructions,
-            query=query_with_rag_context,
+            query=message,
             temperature=0.0,
             lastk=3,
             session_id=sid,
-            rag_usage=False
+            rag_usage=True,
+            rag_threshold='0.3',
+            rag_k=5
         )
 
         response_text = response['response']
+        response = {
+                    "text": response_text,
+                    "attachments": [
+                        {
+                            "title": "Email Options",
+                            "text": "Would you like to email these results to someone?",
+                            "actions": [
+                                {
+                                    "type": "button",
+                                    "text": "✅ Yes",
+                                    "msg": "yes_email",
+                                    "msg_in_chat_window": True,
+                                    "msg_processing_type": "sendMessage",
+                                    "button_id": "yes_button"
+                                },
+                                {
+                                    "type": "button",
+                                    "text": "❌ No",
+                                    "msg": "no_email",
+                                    "msg_in_chat_window": True,
+                                    "msg_processing_type": "sendMessage"
+                                }
+                            ]
+                        }
+                    ]
+        }
 
-    return jsonify({"text": response_text})
-
+    # response_text = response['response']
+    return jsonify({"text": response})
 
 
 
@@ -222,10 +219,6 @@ def agent_email(query, sid):
     except Exception as e:
         print(f"Error occured with parsing output: {response}")
         raise e
-
-
-
-
 
 
 @app.errorhandler(404)
