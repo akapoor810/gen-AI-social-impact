@@ -66,10 +66,9 @@ def main():
     queries. 
     """
 
-    if "email" in message.lower():
-    # or message == "yes_email": #respond with a button for possible further interaction
-        response = agent_email(message, sid)
-        return jsonify({"text": response})
+    # if "email" in message.lower() or message == "yes_email": #respond with a button for possible further interaction
+    #     response = agent_email(message, sid)
+    #     return jsonify({"text": response})
         
         # response = { "text": response_text,
         #             "attachments": [
@@ -87,15 +86,7 @@ def main():
         #                     }
         #                 ]
         #             }
-        
-    if "confirm" in message.lower():
-        response = agent_email(message, sid)
-        
-        tool = extract_tool(response)
-        print("Confirming sending email: ", response, tool)
-        if tool:
-            response = eval(tool)
-        return jsonify({"text": response})
+    
 
     # elif message == "no_email": # respond with a text
     #     response = {
@@ -103,51 +94,75 @@ def main():
     #     }
     # else:
         #Generate a response (you can integrate with AI/chatbot here)
+        # response = generate(
+        #     model='4o-mini',
+        #     system=sys_instructions,
+        #     query=message,
+        #     temperature=0.0,
+        #     lastk=3,
+        #     session_id=sid,
+        #     rag_usage=True,
+        #     rag_threshold='0.3',
+        #     rag_k=5
+        # )
+
+        # response_text = response['response']
+        # response = {
+        #             "text": response_text,
+        #             "attachments": [
+        #                 {
+        #                     "title": "Email Options",
+        #                     "text": "Would you like to email these results to someone?",
+        #                     "actions": [
+        #                         {
+        #                             "type": "button",
+        #                             "text": "✅ Yes",
+        #                             "msg": "yes_email",
+        #                             "msg_in_chat_window": True,
+        #                             "msg_processing_type": "sendMessage",
+        #                             "button_id": "yes_button"
+        #                         },
+        #                         {
+        #                             "type": "button",
+        #                             "text": "❌ No",
+        #                             "msg": "no_email",
+        #                             "msg_in_chat_window": True,
+        #                             "msg_processing_type": "sendMessage"
+        #                         }
+        #                     ]
+        #                 }
+        #             ]
+        # }
+
+    # response_text = response['response']
+    # return jsonify({"text": response_text})
+
+    if "email" in message.lower():
+        response = agent_email(message)
+        return jsonify({"text": response})
+    
+    if "confirm" in message.lower():
+        response = agent_email(message)
+        
+        tool = extract_tool(response)
+        if tool:
+            response = eval(tool)
+        return jsonify({"text": response})
+
     response = generate(
         model='4o-mini',
         system=sys_instructions,
         query=message,
         temperature=0.0,
         lastk=3,
-        session_id=sid,
+        session_id='comp150-cdr-2025s-Ic636oMxYQJviNamr6P6DAmWO45leqi3ZRcBLrl2',
         rag_usage=True,
         rag_threshold='0.3',
         rag_k=5
     )
 
     response_text = response['response']
-    response = {
-                "text": response_text,
-                "attachments": [
-                    {
-                        "title": "Email Options",
-                        "text": "Would you like to email these results to someone?",
-                        "actions": [
-                            {
-                                "type": "button",
-                                "text": "✅ Yes",
-                                "msg": "yes_email",
-                                "msg_in_chat_window": True,
-                                "msg_processing_type": "sendMessage",
-                                "button_id": "yes_button"
-                            },
-                            {
-                                "type": "button",
-                                "text": "❌ No",
-                                "msg": "no_email",
-                                "msg_in_chat_window": True,
-                                "msg_processing_type": "sendMessage"
-                            }
-                        ]
-                    }
-                ]
-    }
-
-    return jsonify({"text": response})
-    # response_text = response['response']
-    # return jsonify({"text": response_text})
-
-
+    return jsonify({"text": response_text})
 
 
 # Tool to send an email
