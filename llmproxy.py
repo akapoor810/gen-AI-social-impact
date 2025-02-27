@@ -9,9 +9,9 @@ with open('config.json', 'r') as file:
 end_point = config['endPoint']
 api_key = config['apiKey']
 
-# end_point = os.environ.get("endPoint")
-# api_key = os.environ.get("apiKey")
-# print(os.environ.get("endPoint"), os.environ.get("apiKey"))
+end_point = os.environ.get("endPoint")
+api_key = os.environ.get("apiKey")
+print(os.environ.get("endPoint"), os.environ.get("apiKey"))
 
 def retrieve(
     query: str,
