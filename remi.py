@@ -159,7 +159,7 @@ def restaurant_assistant_llm(message, user):
         print(session_dict[user]["api_results"])
 
         if len(session_dict[user]["api_results"]) > 2:
-            response_obj["text"] = "To indicate your top choice restaurant, please type 'Top choice: ' followed by its number from the list. For example, if you want the first choice in the list, type 'Top choice: 1'."
+            response_obj["text"] += "To indicate your top choice restaurant, please type 'Top choice: ' followed by its number from the list. For example, if you want the first choice in the list, type 'Top choice: 1'."
         else: 
             # Update user's top choice in session_dict and save to file
             session_dict[user]["top_choice"] = session_dict[user]["api_results"][1]
