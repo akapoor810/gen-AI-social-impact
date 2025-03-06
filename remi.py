@@ -89,7 +89,6 @@ def restaurant_assistant_llm(message, user):
                 "Cuisine noted: [cuisine]\nLocation noted: [location]\nBudget noted: [budget (1-4)]\nSearch radius noted: [radius (in meters)]"
             and then say, "Thank you! Now searching..."
             
-            - If the user is interested in inviting friends, they will respond with yes_clicked. If they are not, they will respond with no_clicked.
             - When the user provides a **reservation date and time**, remember these details and respond with the following in a bulleted list format:
                 "Reservation time: [time]\nReservation date: [date]\n
             - If the user tags a friend using '@' (e.g., "@john_doe"), generate a **personalized invitation message** including:
