@@ -85,7 +85,7 @@ def restaurant_assistant_llm(message, user):
             - Ask the user for the **occasion** to make it more engaging.
 
             - After the user has provided all four parameters of cuisine, budget, location, AND search radius, 
-            respond with the following in a bulleted list format:
+            you must respond with the following in a bulleted list format:
                 "Cuisine noted: [cuisine]\nLocation noted: [location]\nBudget noted: [budget (1-4)]\nSearch radius noted: [radius (in meters)]"
             and then say, "Thank you! Now searching..."
             
@@ -186,6 +186,7 @@ def restaurant_assistant_llm(message, user):
         response_obj["text"] = f"Great! Let's get started on booking you a table at {session_dict[user]["top_choice"]}."
         response_obj["attachments"] = add_friends_button
     
+
     if message == "yes_clicked":
         # Invite friends using agent_contact function
         agent_response = agent_contact(user, message)
