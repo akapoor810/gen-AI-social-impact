@@ -156,6 +156,7 @@ def restaurant_assistant_llm(message, user):
         response_obj["text"] += api_results[0]
 
         session_dict[user]["api_results"] = api_results[1]
+        save_sessions(session_dict)  # Persist changes
         print(session_dict[user]["api_results"])
 
         if len(session_dict[user]["api_results"]) > 2:
@@ -163,6 +164,7 @@ def restaurant_assistant_llm(message, user):
         else: 
             # Update user's top choice in session_dict and save to file
             session_dict[user]["top_choice"] = session_dict[user]["api_results"][1]
+            save_sessions(session_dict)  # Persist changes
             response_obj["attachments"] = add_friends_button
 
     if "top choice" in message.lower():
@@ -171,7 +173,6 @@ def restaurant_assistant_llm(message, user):
         print("user selected restaraunt #", index)
 
         session_dict[user]["top_choice"] = session_dict[user]["api_results"][index]  # Store the top restaurant
-
         save_sessions(session_dict)  # Persist changes
         print("Got top choice from user:", session_dict[user]["top_choice"])
 
