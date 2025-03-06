@@ -14,6 +14,30 @@ YELP_API_URL = "https://api.yelp.com/v3/businesses/search"
 # JSON file to store user sessions
 SESSION_FILE = "session_store.json"
 
+add_friends_button = [
+    {
+        "title": "User Options",
+        "text": "Would you like to add anyone to your reservation?",
+        "actions": [
+            {
+                "type": "button",
+                "text": "✅ Add friends",
+                "msg": "yes_clicked",
+                "msg_in_chat_window": True,
+                "msg_processing_type": "sendMessage",
+                "button_id": "yes_button"
+            },
+            {
+                "type": "button",
+                "text": "❌ No, thank you!",
+                "msg": "no_clicked",
+                "msg_in_chat_window": True,
+                "msg_processing_type": "sendMessage"
+            }
+        ]
+    }
+]
+
 
 ### --- SESSION MANAGEMENT FUNCTIONS --- ###
 def load_sessions():
@@ -66,7 +90,8 @@ def restaurant_assistant_llm(message, user):
             and then say, "Thank you! Now searching..."
             
             - If the user is interested in inviting friends, they will respond with yes_clicked. If they are not, they will respond with no_clicked.
-            - If the user provides a **reservation date and time**, remember these details.
+            - When the user provides a **reservation date and time**, remember these details and respond with the following in a bulleted list format:
+                "Reservation time: [time]\nReservation date: [date]\n
             - If the user tags a friend using '@' (e.g., "@john_doe"), generate a **personalized invitation message** including:
                 - The **restaurant name**
                 - The **reservation date**
@@ -89,28 +114,36 @@ def restaurant_assistant_llm(message, user):
     }
 
     
-    # Extracts a user preference from the response text using a regex pattern
-    def extract_preference(response_text, key, pattern, conversion=None):
-        match = re.search(pattern, response_text)
+    # Extract information from LLM response
+    if "Cuisine noted:" in response_text:
+        ascii_text = re.sub(r"[^\x00-\x7F]+", "", response_text)  # Remove non-ASCII characters
+        match = re.search(r"Cuisine noted[:*\s]*(\S.*)", ascii_text)  # Capture actual text after "*Cuisine noted:*"
         if match:
-            value = match.group(1).strip()
-            return conversion(value) if conversion else value  # Apply conversion if provided
-        return None
+            user_session["preferences"]["cuisine"] = match.group(1).strip()  # Remove extra spaces
 
-    # Remove non-ASCII characters from response_text
-    response_text = re.sub(r"[^\x00-\x7F]+", "", response_text)
-
-    # Define patterns and optional conversions
-    preference_patterns = {
-        "cuisine": (r"Cuisine noted[:*\s]*(\S.*)", None),
-        "budget": (r"Budget noted[:*\s]*(\d+)", str),
-        "location": (r"Location noted[:*\s]*(\S.*)", None),
-        "radius": (r"Search radius noted[:*\s]*(\d+)", lambda x: str(round(int(x) * 1609.34)))
-    }
-
-    # Extract preferences dynamically
-    for key, (pattern, conversion) in preference_patterns.items():
-        user_session["preferences"][key] = extract_preference(response_text, key, pattern, conversion)
+    if "Budget noted:" in response_text:
+        ascii_text = re.sub(r"[^\x00-\x7F]+", "", response_text)  # Remove non-ASCII characters
+        match = re.search(r"Budget noted[:*\s]*(\d+)", ascii_text)  # Extract only the number
+        if match:
+            user_session["preferences"]["budget"] = match.group(1)  # Store as string (convert if needed)
+        else:
+            user_session["preferences"]["budget"] = None  # Handle cases where no number is found
+    
+    if "Location noted:" in response_text:
+        ascii_text = re.sub(r"[^\x00-\x7F]+", "", response_text)  # Remove non-ASCII characters
+        match = re.search(r"Location noted[:*\s]*(\S.*)", ascii_text)  # Capture actual text after "*Location noted:*"
+        if match:
+            user_session["preferences"]["location"] = match.group(1).strip()  # Remove extra spaces
+    
+    if "Search radius noted:" in response_text:
+        ascii_text = re.sub(r"[^\x00-\x7F]+", "", response_text)  # Remove non-ASCII characters
+        match = re.search(r"Search radius noted[:*\s]*(\d+)", ascii_text)  # Extract only the number
+        if match:
+            print(match)
+            metric_radius = round(int(match.group(1)) * 1609.34)
+            user_session["preferences"]["radius"] = str(metric_radius)  # Store as string (convert if needed)
+        else:
+            user_session["preferences"]["radius"] = None  # Handle cases where no number is found
 
     # Create the response object with the basic text
     response_obj = {
@@ -130,29 +163,7 @@ def restaurant_assistant_llm(message, user):
         else: 
             # Update user's top choice in session_dict and save to file
             session_dict[user]["top_choice"] = session_dict[user]["api_results"][1]
-            response_obj["attachments"] = [
-                {
-                    "title": "User Options",
-                    "text": "Would you like to add anyone to your reservation?",
-                    "actions": [
-                        {
-                            "type": "button",
-                            "text": "✅ Add friends",
-                            "msg": "yes_clicked",
-                            "msg_in_chat_window": True,
-                            "msg_processing_type": "sendMessage",
-                            "button_id": "yes_button"
-                        },
-                        {
-                            "type": "button",
-                            "text": "❌ No, thank you!",
-                            "msg": "no_clicked",
-                            "msg_in_chat_window": True,
-                            "msg_processing_type": "sendMessage"
-                        }
-                    ]
-                }
-            ]
+            response_obj["attachments"] = add_friends_button
 
     if "top choice" in message.lower():
         match = re.search(r"top choice[:*\s]*(\d+)", re.sub(r"[^\x00-\x7F]+", "", message.lower()))
@@ -165,29 +176,7 @@ def restaurant_assistant_llm(message, user):
         print("Got top choice from user:", session_dict[user]["top_choice"])
 
         response_obj["text"] = f"Great! Let's get started on booking you a table at {session_dict[user]["top_choice"]}."
-        response_obj["attachments"] = [
-            {
-                "title": "User Options",
-                "text": "Would you like to add anyone to your reservation?",
-                "actions": [
-                    {
-                        "type": "button",
-                        "text": "✅ Add friends",
-                        "msg": "yes_clicked",
-                        "msg_in_chat_window": True,
-                        "msg_processing_type": "sendMessage",
-                        "button_id": "yes_button"
-                    },
-                    {
-                        "type": "button",
-                        "text": "❌ No, thank you!",
-                        "msg": "no_clicked",
-                        "msg_in_chat_window": True,
-                        "msg_processing_type": "sendMessage"
-                    }
-                ]
-            }
-        ]
+        response_obj["attachments"] = add_friends_button
     
     if message == "yes_clicked":
         # Invite friends using agent_contact function
@@ -216,7 +205,6 @@ def restaurant_assistant_llm(message, user):
     reservation_date = reservation_date_match.group(1).strip() if reservation_date_match else "a date"
     reservation_time = reservation_time_match.group(1).strip() if reservation_time_match else "a time"
 
-    #getting top res name
     # Extract restaurant name from session_dict
     top_choice = session_dict[user]["top_choice"]
 
