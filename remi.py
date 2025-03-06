@@ -152,7 +152,7 @@ def restaurant_assistant_llm(message, user):
     # Handle different scenarios and update the response text or add attachments as needed
     if "now searching" in response_text.lower():
         api_results = search_restaurants(user_session)
-        response_obj["text"] += api_results[0]
+        response_obj["text"] = api_results[0]
 
         session_dict[user]["api_results"] = api_results[1]
         save_sessions(session_dict)  # Persist changes
@@ -167,13 +167,21 @@ def restaurant_assistant_llm(message, user):
             response_obj["attachments"] = add_friends_button
 
     if "top choice" in message.lower():
-        match = re.search(r"top choice[:*\s]*(\d+)", re.sub(r"[^\x00-\x7F]+", "", message.lower()))
-        index = int(match.group(1)) if match else None
-        print(f"user selected restaraunt #{index}")
+        match = re.search(r"top choice[:\s]*(\d+)", re.sub(r"[^\x00-\x7F]+", "", message.lower()))
+        if match:
+            index = int(match.group(1).strip())  # Strip any unexpected spaces
+            print(f"user selected restaurant #{index}")
 
-        session_dict[user]["top_choice"] = session_dict[user]["api_results"][index]  # Store the top restaurant
-        save_sessions(session_dict)  # Persist changes
-        print("Got top choice from user:", session_dict[user]["top_choice"])
+            # Ensure the index is within the range of available results
+            if 1 <= index < len(session_dict[user]["api-results"]):
+                session_dict[user]["top_choice"] = session_dict[user]["api-results"][index]
+                save_sessions(session_dict)  # Persist changes
+                print("Got top choice from user:", session_dict[user]["top_choice"])
+                save_sessions(session_dict)
+            else:
+                print(f"⚠️ Invalid index: {index} (out of range)")
+        else:
+            print("⚠️ No valid top choice found in message.")
 
         response_obj["text"] = f"Great! Let's get started on booking you a table at {session_dict[user]["top_choice"]}."
         response_obj["attachments"] = add_friends_button
