@@ -157,10 +157,10 @@ def restaurant_assistant_llm(message, user):
 
         session_dict[user]["api_results"] = api_results[1]
         save_sessions(session_dict)  # Persist changes
-        print(session_dict[user]["api_results"])
+        print("The api results stored in the dictionary: ", session_dict[user]["api_results"])
 
         if len(session_dict[user]["api_results"]) > 2:
-            response_obj["text"] += "To indicate your top choice restaurant, please type 'Top choice: ' followed by its number from the list. For example, if you want the first choice in the list, type 'Top choice: 1'."
+            response_obj["text"] += "\nTo indicate your top choice restaurant, please type 'Top choice: ' followed by its number from the list. For example, if you want the first choice in the list, type 'Top choice: 1'."
         else: 
             # Update user's top choice in session_dict and save to file
             session_dict[user]["top_choice"] = session_dict[user]["api_results"][1]
