@@ -189,7 +189,7 @@ def restaurant_assistant_llm(message, user):
 
     if message == "yes_clicked":
         # Invite friends using agent_contact function
-        agent_response = agent_contact(user, message)
+        agent_response = agent_contact(user, session_dict[user]["top_choice"])
 
         # If the response is a Flask Response object, extract its JSON content
         if isinstance(agent_response, Response):  
@@ -202,7 +202,7 @@ def restaurant_assistant_llm(message, user):
         
     elif message == "no_clicked":
         # send the agent our restaurant choice
-        response_obj["text"] = "Table for one it is!"
+        response_obj["text"] = "Table for one it is! Please provide the date and time for your reservation."
         booking()
 
 
@@ -326,19 +326,19 @@ def agent_contact(user, message):
         return jsonify({"error": "⚠️ No active session found for this user."})
 
     sid = session_dict[user]["session_id"]
-    top_choice = session_dict[user].get("top_choice", "N/A")  # Ensure it exists
+    top_choice = session_dict[user]["top_choice"]  # Ensure it exists
 
     system = f"""
     You are an AI agent helping users invite friends to a restaurant reservation. 
-    The user has chosen **{top_choice}** as their restaurant.
+    The user initially inputs their top restaurant choice.
 
-    GO THROUGH THESE STEPS:
+    Follow these three steps:
     1. Ask the user for a **date and time** for their reservation.
-    2. Ask the user for their **friend’s Rocket.Chat ID**.
+    2. Ask the user for their **friend's Rocket.Chat ID**.
     3. Generate an **invitation message** for the friend.
-    4. Once both details are collected, format them like this:
+    4. Once all details are collected, format them like this:
     
-        ✅ **Friend's Rocket.Chat ID:** [user_id]  
+        ✅ **Friend's Rocket.Chat ID:** [user_id]
         ✅ **Invitation Message:** [message]  
         
         📩 *Thank you! Now contacting your friend...*
