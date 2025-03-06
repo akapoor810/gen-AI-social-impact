@@ -173,8 +173,8 @@ def restaurant_assistant_llm(message, user):
             print(f"user selected restaurant #{index}")
 
             # Ensure the index is within the range of available results
-            if 1 <= index < len(session_dict[user]["api-results"]):
-                session_dict[user]["top_choice"] = session_dict[user]["api-results"][index]
+            if 1 <= index < len(session_dict[user]["api_results"]):
+                session_dict[user]["top_choice"] = session_dict[user]["api_results"][index]
                 save_sessions(session_dict)  # Persist changes
                 print("Got top choice from user:", session_dict[user]["top_choice"])
                 save_sessions(session_dict)
@@ -296,7 +296,7 @@ def search_restaurants(user_session):
 
     response = requests.get(YELP_API_URL, headers=headers, params=params)
 
-    res = [f"Here is a budget-friendly suggestion we found for {cuisine} cuisine within a {round(float(radius) * 0.000621371)}-mile radius of {location}!\n"]
+    res = [f"Here are some budget-friendly suggestions we found for {cuisine} cuisine within a {round(float(radius) * 0.000621371)}-mile radius of {location}!\n"]
     if response.status_code == 200:
         data = response.json()
         if "businesses" in data and data["businesses"]:
