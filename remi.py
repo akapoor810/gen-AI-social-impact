@@ -219,13 +219,12 @@ def restaurant_assistant_llm(message, user):
 
     if message == "yes_clicked":
         # Invite friends using agent_contact function
-        response_obj["text"] = "Great! Let me know your **reservation date and time** and your friend's **Rocket.Chat ID**, and we can get that invitation ready! 😊✨"
+        response_obj["text"] = "Great! Let me know your **reservation date and time** and your friend's **Rocket.Chat ID** (e.g., '@john_doe'), and we can get that invitation ready! 😊✨"
 
 
     elif message == "no_clicked":
         # send the agent our restaurant choice
         response_obj["text"] = "Table for one it is! Let me know your **reservation date and time**. 😊✨"
-        booking()
 
 
     print("current details collected: ", user_session['preferences'])
@@ -452,8 +451,9 @@ def booking():
 @app.route('/query', methods=['POST'])
 def main():
     print("starting main exec")
-    """Handles user messages and manages session storage."""
-    global session_dict
+
+    # Load the most recent session data from the file
+    session_dict = load_sessions()
 
     data = request.get_json()
     message = data.get("text", "").strip()
@@ -462,17 +462,15 @@ def main():
     print("Current session dict:", session_dict)
     print("Current user:", user)
 
-    # Load user session if it exists, otherwise create a new one
+    # Check if the user exists in session_dict; if not, create a new session
     if user not in session_dict:
-        print("new user", user)
+        print("New user detected:", user)
         session_dict[user] = {"session_id": f"{user}-session", "api_results": [], "top_choice": ""}
 
-    sid = session_dict[user]["session_id"]
-    print("Session ID:", sid)
-
-    # Get response from assistant
+    # Process the request
     response = restaurant_assistant_llm(message, user)
-    
+
+    # Save the updated session data back to the file
     save_sessions(session_dict)
 
     print("PRINTING IN MAIN")
