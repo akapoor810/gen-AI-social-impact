@@ -264,8 +264,8 @@ def restaurant_assistant_llm(message, user, session_dict):
 
         # Log response from Rocket.Chat API
 
-    tool = extract_tool(response)
-    if tool:
+    if "rc_message" in response_text.lower():
+        tool = extract_tool(response_text.lower())
         response = eval(tool)
         print(f"📩 Rocket.Chat API Response: {response}")
         f"📩 Invitation sent on Rocket.Chat!"
