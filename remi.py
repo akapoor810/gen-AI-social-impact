@@ -65,8 +65,7 @@ def save_sessions(session_dict):
 
 ### --- MAIN BOT FUNCTION --- ###
 def restaurant_assistant_llm(message, user, session_dict):
-    print("in res LLM")
-    print(f"user input: {message}")
+    print(f"in res LLM. user input: {message}")
     """Handles the full conversation and recommends a restaurant."""
     sid = session_dict[user]["session_id"]
     
@@ -229,41 +228,6 @@ def restaurant_assistant_llm(message, user, session_dict):
         response_obj["text"] = "Table for one it is! Let me know your **reservation date and time**. 😊✨"
 
 
-    # print("current details collected: ", user_session['preferences'])
-    # # Extract restaurant name, reservation date, and reservation time from response_text
-    # reservation_date_match = re.search(r"Reservation date[:*\s]*(\S.*)", response_text)
-    # reservation_time_match = re.search(r"Reservation time[:*\s]*(\S.*)", response_text)
-
-    # reservation_date = reservation_date_match.group(1).strip() if reservation_date_match else "a date"
-    # reservation_time = reservation_time_match.group(1).strip() if reservation_time_match else "a time"
-
-    # # Extract restaurant name from session_dict
-    # top_choice = session_dict[user].get("top_choice", "")
-
-    # # Use regex to extract just the restaurant name
-    # restaurant_name_match = re.search(r"\*\*(.*?)\*\*", top_choice)
-    # restaurant_name = restaurant_name_match.group(1) if restaurant_name_match else "a restaurant"
-
-    
-    # Check if the user provided a Rocket.Chat ID (i.e., an @username)
-    # match = re.search(r"@(\S+)", message)
-    # if match:
-    #     print("TOP CHOICE" + str(top_choice))
-    #     rocket_chat_id = match.group(1)  # Extract username after "@"
-
-    #     # Send a message via Rocket.Chat
-    #     invitation_message = f"""
-        
-    #     Hey @{rocket_chat_id}! 🍽️ {user} has invited you to dinner at **{restaurant_name}** on 📅 {reservation_date} at ⏰ {reservation_time}. Let's go! 🎉
-
-    #     Are you able to attend?
-    #     """
-
-    #     # Construct Yes/No buttons
-    #     rc_response = RC_message(f"@{rocket_chat_id}", invitation_message)  # Ensure correct format
-
-        # Log response from Rocket.Chat API
-
     tool = extract_tool(response_text)
     if tool:
         print("GOING TO EVALUATE:", tool)
@@ -290,7 +254,6 @@ def restaurant_assistant_llm(message, user, session_dict):
 
 
 def search_restaurants(user_session):
-    print('In search restaurants function')
     # """Uses Yelp API to find a restaurant based on user preferences."""
     
     cuisine = user_session["preferences"]["cuisine"]
@@ -307,7 +270,7 @@ def search_restaurants(user_session):
     
     # Ensure radius is valid (Yelp API has a maximum of 40000 meters)
     try:
-        radius_val = int(radius) if radius else 8000
+        radius_val = int(radius) if radius else 20000
         if radius_val > 40000:
             radius_val = 40000
     except (ValueError, TypeError):
@@ -334,7 +297,6 @@ def search_restaurants(user_session):
                 name = restaurant["name"]
                 address = ", ".join(restaurant["location"]["display_address"])
                 rating = restaurant["rating"]
-                print(f"🍽️ Found **{name}** ({rating}⭐) in {address}")
                 res.append(f"{i+1}. **{name}** ({rating}⭐) in {address}\n")
             
             return ["".join(res), res]
@@ -344,6 +306,7 @@ def search_restaurants(user_session):
     return [f"⚠️ Yelp API request failed. Error {response.status_code}: {response.text}", []]
 
 
+    
 def RC_message(user_id, message):
     print("in RC_message function")
     url = "https://chat.genaiconnect.net/api/v1/chat.postMessage" #URL of RocketChat server, keep the same
@@ -394,6 +357,33 @@ def RC_message(user_id, message):
     print(response.status_code)
     print(response.json())
     return response.json()
+
+
+
+
+def handle_friend_response(message):
+    # system = """
+    
+    # """
+
+    # response = generate(model = '4o-mini',
+    #     system = system,
+    #     query = query,
+    #     temperature=0.7,
+    #     lastk=10,
+    #     session_id='DEMO_AGENT_EMAIL',
+    #     rag_usage = False)
+    
+    user_id = message.split("_")[-1]  # Extract user ID
+    response_type = "accepted" if message.startswith("yes_response_") else "declined"
+
+    print(f"📩 User {user_id} has {response_type} the invitation.")
+
+    response_text = (
+        f"🎉 Great! {user_id} has accepted the invitation!" 
+        if response_type == "accepted" 
+        else f"😢 {user_id} has declined the invitation."
+    )
 
 
 # Extracts the tool from text using regex
@@ -459,8 +449,15 @@ def main():
     sid = session_dict[user]["session_id"]
     print("Session ID:", sid)
 
+
+    # **Check if the message is a button response from friend**
+    if message.startswith("yes_response_") or message.startswith("no_response_"):
+        response = handle_friend_response(message)
+
+
     # Get response from assistant
-    response = restaurant_assistant_llm(message, user, session_dict)
+    else:
+        response = restaurant_assistant_llm(message, user, session_dict)
     
     # Save session data at the end of the request
     save_sessions(session_dict)
