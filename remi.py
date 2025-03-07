@@ -1,7 +1,7 @@
 import os
 import json
 import requests
-from flask import Flask, request, jsonify , Response
+from flask import Flask, request, jsonify, Response
 from llmproxy import generate
 import re
 
@@ -41,52 +41,35 @@ add_friends_button = [
 
 ### --- SESSION MANAGEMENT FUNCTIONS --- ###
 def load_sessions():
-    """Load stored sessions from a JSON file every time a request is made."""
+    """Load stored sessions from a JSON file."""
+    print("Loading session data...")
     if os.path.exists(SESSION_FILE):
-        try:
-            with open(SESSION_FILE, "r") as file:
+        with open(SESSION_FILE, "r") as file:
+            try:
                 session_data = json.load(file)
+                print(f"Loaded session data: {session_data}")
                 return session_data
-        except json.JSONDecodeError:
-            print("⚠️ Error loading session data. Returning empty dictionary.")
-            return {}  # If file is corrupted, return an empty dict
-    return {}  # If file doesn't exist, return an empty dictionary
-
+            except json.JSONDecodeError:
+                print("Error loading session data, returning empty dict.")
+                return {}  # If file is corrupted, return an empty dict
+    print("No session file found. Returning empty dictionary.")
+    return {}
 
 def save_sessions(session_dict):
-    """Save sessions to a JSON file after every modification."""
+    """Save sessions to a JSON file."""
+    print(f"Saving session data: {session_dict}")
     with open(SESSION_FILE, "w") as file:
         json.dump(session_dict, file, indent=4)
-    print("✅ Session data saved:", session_dict)
-
-
-
-
-# def load_sessions():
-#     """Load stored sessions from a JSON file."""
-#     if os.path.exists(SESSION_FILE):
-#         with open(SESSION_FILE, "r") as file:
-#             try:
-#                 return json.load(file)
-#             except json.JSONDecodeError:
-#                 return {}  # If file is corrupted, return an empty dict
-#     return {}
-
-# def save_sessions(session_dict):
-#     """Save sessions to a JSON file."""
-#     with open(SESSION_FILE, "w") as file:
-#         json.dump(session_dict, file, indent=4)
-
-
-# Load sessions when the app starts
-session_dict = load_sessions()
+    print("Session data saved.")
 
 
 ### --- MAIN BOT FUNCTION --- ###
-def restaurant_assistant_llm(message, user):
-    print("res LLM")
+def restaurant_assistant_llm(message, user, session_dict):
+    print("in res LLM")
+    print(f"user input: {message}")
     """Handles the full conversation and recommends a restaurant."""
     sid = session_dict[user]["session_id"]
+    
     response = generate(
         model="4o-mini",
         system="""
@@ -122,7 +105,7 @@ def restaurant_assistant_llm(message, user):
 
         query=message,
         temperature=0.7,
-        lastk=20,
+        lastk=10,
         session_id=sid,
         rag_usage=False
     )
@@ -141,12 +124,19 @@ def restaurant_assistant_llm(message, user):
         match = re.search(r"Cuisine noted[:*\s]*(\S.*)", ascii_text)  # Capture actual text after "*Cuisine noted:*"
         if match:
             user_session["preferences"]["cuisine"] = match.group(1).strip()  # Remove extra spaces
+            # Store in session for persistence
+            if "current_search" not in session_dict[user]:
+                session_dict[user]["current_search"] = {}
+            session_dict[user]["current_search"]["cuisine"] = match.group(1).strip()
 
     if "Budget noted:" in response_text:
         ascii_text = re.sub(r"[^\x00-\x7F]+", "", response_text)  # Remove non-ASCII characters
         match = re.search(r"Budget noted[:*\s]*(\d+)", ascii_text)  # Extract only the number
         if match:
             user_session["preferences"]["budget"] = match.group(1)  # Store as string (convert if needed)
+            if "current_search" not in session_dict[user]:
+                session_dict[user]["current_search"] = {}
+            session_dict[user]["current_search"]["budget"] = match.group(1)
         else:
             user_session["preferences"]["budget"] = None  # Handle cases where no number is found
     
@@ -155,6 +145,9 @@ def restaurant_assistant_llm(message, user):
         match = re.search(r"Location noted[:*\s]*(\S.*)", ascii_text)  # Capture actual text after "*Location noted:*"
         if match:
             user_session["preferences"]["location"] = match.group(1).strip()  # Remove extra spaces
+            if "current_search" not in session_dict[user]:
+                session_dict[user]["current_search"] = {}
+            session_dict[user]["current_search"]["location"] = match.group(1).strip()
     
     if "Search radius noted:" in response_text:
         ascii_text = re.sub(r"[^\x00-\x7F]+", "", response_text)  # Remove non-ASCII characters
@@ -163,6 +156,9 @@ def restaurant_assistant_llm(message, user):
             print(match)
             metric_radius = round(int(match.group(1)) * 1609.34)
             user_session["preferences"]["radius"] = str(metric_radius)  # Store as string (convert if needed)
+            if "current_search" not in session_dict[user]:
+                session_dict[user]["current_search"] = {}
+            session_dict[user]["current_search"]["radius"] = str(metric_radius)
         else:
             user_session["preferences"]["radius"] = None  # Handle cases where no number is found
 
@@ -171,26 +167,38 @@ def restaurant_assistant_llm(message, user):
         "text": response_text
     }
 
+    # If we already have preferences stored in the session, use those instead
+    if "current_search" in session_dict[user]:
+        for key in ["cuisine", "budget", "location", "radius"]:
+            if session_dict[user]["current_search"].get(key):
+                user_session["preferences"][key] = session_dict[user]["current_search"][key]
+
     # Handle different scenarios and update the response text or add attachments as needed
     if "now searching" in response_text.lower():
+        # Clear previous API results before performing a new search
+        session_dict[user]["api_results"] = []
+        session_dict[user]["top_choice"] = ""
+        save_sessions(session_dict)  # Save before the API call
+        
         api_results = search_restaurants(user_session)
         response_obj["text"] = api_results[0]
 
-        # Only update session if API results are valid
-        if api_results[1]:
-            session_dict[user]["api_results"] = api_results[1]
-            print("📌 Storing API results for user:", session_dict[user]["api_results"])
-            save_sessions(session_dict)  # Save immediately to persist data
+        # Store new results
+        session_dict[user]["api_results"] = api_results[1]
+        save_sessions(session_dict)  # Persist changes
+        print("The api results stored in the dictionary: ", session_dict[user]["api_results"])
 
         if len(session_dict[user]["api_results"]) > 2:
             response_obj["text"] += "\nWhat is your top choice restaurant? Please type 'Top choice: ' followed by the restaurant's number from the list."
-        else:
-            session_dict[user]["top_choice"] = session_dict[user]["api_results"][1]  # Select the top choice if results are few
-            save_sessions(session_dict)  # Persist the changes immediately
+            save_sessions(session_dict)
+        else: 
+            # Update user's top choice in session_dict and save to file
+            session_dict[user]["top_choice"] = session_dict[user]["api_results"][1]
+            save_sessions(session_dict)  # Persist changes
             response_obj["attachments"] = add_friends_button
 
-
     if "top choice" in message.lower():
+        print("getting top choice from the following results: ", session_dict[user]["api_results"])
         match = re.search(r"top choice[:\s]*(\d+)", re.sub(r"[^\x00-\x7F]+", "", message.lower()))
         if match:
             index = int(match.group(1).strip())  # Strip any unexpected spaces
@@ -203,19 +211,19 @@ def restaurant_assistant_llm(message, user):
                 print("Got top choice from user:", session_dict[user]["top_choice"])
                 save_sessions(session_dict)
             else:
-                print(f"⚠️ Invalid index: {index} (out of range 1 to {len(session_dict[user]["api_results"])})")
+                print(f"⚠️ Invalid index: {index} (out of range 1 to {len(session_dict[user]['api_results'])})")
         else:
             print("⚠️ No valid top choice found in message.")
 
-        response_obj["text"] = f"Great! Let's get started on booking you a table at {session_dict[user]["top_choice"]}."
+        response_obj["text"] = f"Great! Let's get started on booking you a table at {session_dict[user]['top_choice']}."
         response_obj["attachments"] = add_friends_button
     
 
     if message == "yes_clicked":
         # Invite friends using agent_contact function
-        response_obj["text"] = "Great! Let me know your **reservation date and time** and your friend's **Rocket.Chat ID** (e.g., '@john_doe'), and we can get that invitation ready! 😊✨"
+        response_obj["text"] = "Great! Let me know your **reservation date and time** and your friend's **Rocket.Chat ID**, and we can get that invitation ready! 😊✨"
 
-
+        
     elif message == "no_clicked":
         # send the agent our restaurant choice
         response_obj["text"] = "Table for one it is! Let me know your **reservation date and time**. 😊✨"
@@ -230,7 +238,7 @@ def restaurant_assistant_llm(message, user):
     reservation_time = reservation_time_match.group(1).strip() if reservation_time_match else "a time"
 
     # Extract restaurant name from session_dict
-    top_choice = session_dict[user]["top_choice"]
+    top_choice = session_dict[user].get("top_choice", "")
 
     # Use regex to extract just the restaurant name
     restaurant_name_match = re.search(r"\*\*(.*?)\*\*", top_choice)
@@ -246,7 +254,7 @@ def restaurant_assistant_llm(message, user):
         # Send a message via Rocket.Chat
         invitation_message = f"""
         
-        Hey @{rocket_chat_id}! 🍽️ {user} has invited you to dinner at **{restaurant_name}** on 📅 {reservation_date} at ⏰ {reservation_time}. Let’s go! 🎉
+        Hey @{rocket_chat_id}! 🍽️ {user} has invited you to dinner at **{restaurant_name}** on 📅 {reservation_date} at ⏰ {reservation_time}. Let's go! 🎉
 
         Are you able to attend?
         """
@@ -280,10 +288,10 @@ def restaurant_assistant_llm(message, user):
             "text": f"📩 Invitation sent to **{rocket_chat_id}** on Rocket.Chat! Thank you for using REMI!"
         }
 
+    save_sessions(session_dict)
     print(str(response_obj))
 
     return response_obj
-
 
 
 def search_restaurants(user_session):
@@ -295,23 +303,34 @@ def search_restaurants(user_session):
     location = user_session["preferences"]["location"]
     radius = user_session["preferences"]["radius"]
 
+    print(f"Searching for restaurants with params: cuisine={cuisine}, budget={budget}, location={location}, radius={radius}")
+
     headers = {
         "Authorization": f"Bearer {API_KEY}",
         "accept": "application/json"
     }
     
+    # Ensure radius is valid (Yelp API has a maximum of 40000 meters)
+    try:
+        radius_val = int(radius) if radius else 8000
+        if radius_val > 40000:
+            radius_val = 40000
+    except (ValueError, TypeError):
+        radius_val = 20000
+    
     params = {
         "term": cuisine,
         "location": location,
         "price": budget,  # Yelp API uses 1 (cheap) to 4 (expensive)
-        "radius": 8000, # HARDCODED THIS TO AVOID ERRORS FOR NOW!
+        "radius": radius_val,
         "limit": 5,  # top
         "sort_by": "best_match"
     }
 
+    print(f"API request params: {params}")
     response = requests.get(YELP_API_URL, headers=headers, params=params)
 
-    res = [f"Here are some budget-friendly suggestions we found for {cuisine} cuisine within a {round(float(radius) * 0.000621371)}-mile radius of {location}!\n"]
+    res = [f"Here are some budget-friendly suggestions we found for {cuisine} cuisine within a {round(float(radius_val) * 0.000621371)}-mile radius of {location}!\n"]
     if response.status_code == 200:
         data = response.json()
         if "businesses" in data and data["businesses"]:
@@ -325,85 +344,10 @@ def search_restaurants(user_session):
             
             return ["".join(res), res]
         else:
-            return "⚠️ Sorry, I couldn't find any matching restaurants. Try adjusting your preferences!"
+            return ["⚠️ Sorry, I couldn't find any matching restaurants. Try adjusting your preferences!", []]
     
-    return f"⚠️ Yelp API request failed. Error {response.status_code}: {response.text}"
+    return [f"⚠️ Yelp API request failed. Error {response.status_code}: {response.text}", []]
 
-
-# # COPIED FROM example_agent_tool
-# # TODO: update system instructions to instruct agent to only contact friends when the user has
-# # provided the rocket chat IDs of their friends
-# def agent_contact(user, message):
-#     print("In agent contact")
-#     # Ensure user session exists
-#     if user not in session_dict:
-#         print("IF LOOP: user not in session_dict")
-#         return jsonify({"error": "⚠️ No active session found for this user."})
-
-#     sid = session_dict[user]["session_id"]
-#     top_choice = session_dict[user]["top_choice"]  # Ensure it exists
-
-#     system = f"""
-#     You are an AI agent helping users invite friends to a restaurant reservation. 
-#     The user initially inputs their top restaurant choice.
-
-#     Follow these three steps:
-#     1. Ask the user for a **date and time** for their reservation.
-#     2. Ask the user for their **friend's Rocket.Chat ID**.
-#     3. Generate an **invitation message** for the friend.
-#     4. Once all details are collected, format them like this:
-    
-#         ✅ **Friend's Rocket.Chat ID:** [user_id]
-#         ✅ **Invitation Message:** [message]  
-        
-#         📩 *Thank you! Now contacting your friend...*
-
-#     """
-
-#     response = generate(
-#         model='4o-mini',
-#         system=system,
-#         query=message,
-#         temperature=0.7,
-#         lastk=10,
-#         session_id=sid,
-#         rag_usage=False
-#     )
-
-#     agent_response = response.get('response', "⚠️ Sorry, something went wrong while generating the invitation.")
-
-#     # Extract user ID and message using regex
-#     match_user_id = re.search(r"Friend's Rocket.Chat ID: (.+)", agent_response)
-#     match_message = re.search(r"Invitation Message: (.+)", agent_response)
-
-#     if match_user_id and match_message:
-#         print("FOUND match_user_id and match_message")
-#         user_id = match_user_id.group(1).strip()
-#         message_text = match_message.group(1).strip()
-
-#         # Send the message via Rocket.Chat and get a serializable response
-#         rocket_chat_response = RC_message(user_id, message_text)
-
-#         print(str(agent_response))
-        
-#         return jsonify({
-#             "agent_response": agent_response,
-#             "status": "Message Sent",
-#             "rocket_chat_response": rocket_chat_response  # This is now a dictionary
-#         })
-    
-    
-    
-#     print(str(agent_response))
-#     return jsonify({
-#         "agent_response": agent_response,
-#         "status": "error",
-#         "message": "⚠️ Missing required information. Please try again."
-#     })
-
-
-   
-    
 
 def RC_message(user_id, message, buttons=None):
     print("in RC_message function")
@@ -435,36 +379,64 @@ def RC_message(user_id, message, buttons=None):
     # Print response status and content
     print(response.status_code)
     print(response.json())
-
-
-def booking():
-    return jsonify({"text": "BOOKING NOW..."})
+    return response.json()
 
 
 ### --- FLASK ROUTE TO HANDLE USER REQUESTS --- ###
 @app.route('/query', methods=['POST'])
 def main():
     print("starting main exec")
-
-    # Load the most recent session data from the file
-    session_dict = load_sessions()
-
+    """Handles user messages and manages session storage."""
+    
     data = request.get_json()
     message = data.get("text", "").strip()
     user = data.get("user_name", "Unknown")
 
+    # Create a unique conversation ID based on time to better separate sessions
+    import time
+    conversation_id = f"{user}-{int(time.time())}"
+
+    # Load sessions at the beginning of each request
+    session_dict = load_sessions()
+    
     print("Current session dict:", session_dict)
     print("Current user:", user)
 
-    # Check if the user exists in session_dict; if not, create a new session
+    # Check if we need to create a new conversation (e.g., if user starts over)
+    if "restart" in message.lower() or "start over" in message.lower() or "new search" in message.lower():
+        print(f"Starting new conversation for {user}")
+        if user in session_dict:
+            # Save old session data with timestamp for debugging
+            old_session_id = session_dict[user]["session_id"]
+            session_dict[f"{user}_old_{int(time.time())}"] = session_dict[user]
+            # Create new session
+            session_dict[user] = {
+                "session_id": conversation_id,
+                "api_results": [],
+                "top_choice": "",
+                "current_search": {}
+            }
+            save_sessions(session_dict)
+            print(f"Created new session for {user}, archived old session {old_session_id}")
+
+    # Initialize user session if it doesn't exist
     if user not in session_dict:
-        print("New user detected:", user)
-        session_dict[user] = {"session_id": f"{user}-session", "api_results": [], "top_choice": ""}
+        print("new user", user)
+        session_dict[user] = {
+            "session_id": conversation_id,
+            "api_results": [],
+            "top_choice": "",
+            "current_search": {}
+        }
+        save_sessions(session_dict)  # Save immediately after creating new session
 
-    # Process the request
-    response = restaurant_assistant_llm(message, user)
+    sid = session_dict[user]["session_id"]
+    print("Session ID:", sid)
 
-    # Save the updated session data back to the file
+    # Get response from assistant
+    response = restaurant_assistant_llm(message, user, session_dict)
+    
+    # Save session data at the end of the request
     save_sessions(session_dict)
 
     print("PRINTING IN MAIN")
