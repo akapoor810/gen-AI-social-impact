@@ -202,7 +202,6 @@ def restaurant_assistant_llm(message, user, session_dict):
             response_obj["attachments"] = add_friends_button
 
     if "top choice" in message.lower():
-        print("getting top choice from the following results: ", session_dict[user]["api_results"])
         match = re.search(r"top choice[:\s]*(\d+)", re.sub(r"[^\x00-\x7F]+", "", message.lower()))
         if match:
             index = int(match.group(1).strip())  # Strip any unexpected spaces
@@ -213,7 +212,6 @@ def restaurant_assistant_llm(message, user, session_dict):
                 session_dict[user]["top_choice"] = session_dict[user]["api_results"][index]
                 save_sessions(session_dict)  # Persist changes
                 print("Got top choice from user:", session_dict[user]["top_choice"])
-                save_sessions(session_dict)
             else:
                 print(f"⚠️ Invalid index: {index} (out of range 1 to {len(session_dict[user]['api_results'])})")
         else:
@@ -255,15 +253,10 @@ def restaurant_assistant_llm(message, user, session_dict):
         response = eval(tool)
         print(f"📩 Rocket.Chat API Response: {response}")
         response_obj["text"] = f"📩 Invitation sent on Rocket.Chat!"
-        
-    if "yes_response_" in message.lower():
-        response_obj["text"] = "Your friend has accepted your invite!"
-    elif "no_response_" in message.lower():
-        response_obj["text"] = "It looks like they can't make it!"
+    
 
     save_sessions(session_dict)
     print(str(response_obj))
-
     return response_obj
 
 
