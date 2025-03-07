@@ -1,7 +1,7 @@
 import os
 import json
 import requests
-from flask import Flask, request, jsonify , Response
+from flask import Flask, request, jsonify, Response
 from llmproxy import generate
 import re
 
@@ -62,28 +62,9 @@ def save_sessions(session_dict):
         json.dump(session_dict, file, indent=4)
     print("Session data saved.")
 
-# def load_sessions():
-#     """Load stored sessions from a JSON file."""
-#     if os.path.exists(SESSION_FILE):
-#         with open(SESSION_FILE, "r") as file:
-#             try:
-#                 return json.load(file)
-#             except json.JSONDecodeError:
-#                 return {}  # If file is corrupted, return an empty dict
-#     return {}
-
-# def save_sessions(session_dict):
-#     """Save sessions to a JSON file."""
-#     with open(SESSION_FILE, "w") as file:
-#         json.dump(session_dict, file, indent=4)
-
-
-# Load sessions when the app starts
-session_dict = load_sessions()
-
 
 ### --- MAIN BOT FUNCTION --- ###
-def restaurant_assistant_llm(message, user):
+def restaurant_assistant_llm(message, user, session_dict):
     print("in res LLM")
     print(f"user input: {message}")
     """Handles the full conversation and recommends a restaurant."""
@@ -204,11 +185,11 @@ def restaurant_assistant_llm(message, user):
                 print("Got top choice from user:", session_dict[user]["top_choice"])
                 save_sessions(session_dict)
             else:
-                print(f"⚠️ Invalid index: {index} (out of range 1 to {len(session_dict[user]["api_results"])})")
+                print(f"⚠️ Invalid index: {index} (out of range 1 to {len(session_dict[user]['api_results'])})")
         else:
             print("⚠️ No valid top choice found in message.")
 
-        response_obj["text"] = f"Great! Let's get started on booking you a table at {session_dict[user]["top_choice"]}."
+        response_obj["text"] = f"Great! Let's get started on booking you a table at {session_dict[user]['top_choice']}."
         response_obj["attachments"] = add_friends_button
     
 
@@ -248,7 +229,7 @@ def restaurant_assistant_llm(message, user):
         # Send a message via Rocket.Chat
         invitation_message = f"""
         
-        Hey @{rocket_chat_id}! 🍽️ {user} has invited you to dinner at **{restaurant_name}** on 📅 {reservation_date} at ⏰ {reservation_time}. Let’s go! 🎉
+        Hey @{rocket_chat_id}! 🍽️ {user} has invited you to dinner at **{restaurant_name}** on 📅 {reservation_date} at ⏰ {reservation_time}. Let's go! 🎉
 
         Are you able to attend?
         """
@@ -286,7 +267,6 @@ def restaurant_assistant_llm(message, user):
     print(str(response_obj))
 
     return response_obj
-
 
 
 def search_restaurants(user_session):
@@ -333,81 +313,6 @@ def search_restaurants(user_session):
     return f"⚠️ Yelp API request failed. Error {response.status_code}: {response.text}"
 
 
-# COPIED FROM example_agent_tool
-# TODO: update system instructions to instruct agent to only contact friends when the user has
-# provided the rocket chat IDs of their friends
-# def agent_contact(user, message):
-#     print("In agent contact")
-#     # Ensure user session exists
-#     if user not in session_dict:
-#         print("IF LOOP: user not in session_dict")
-#         return jsonify({"error": "⚠️ No active session found for this user."})
-
-#     sid = session_dict[user]["session_id"]
-#     top_choice = session_dict[user]["top_choice"]  # Ensure it exists
-
-#     system = f"""
-#     You are an AI agent helping users invite friends to a restaurant reservation. 
-#     The user initially inputs their top restaurant choice.
-
-#     Follow these three steps:
-#     1. Ask the user for a **date and time** for their reservation.
-#     2. Ask the user for their **friend's Rocket.Chat ID**.
-#     3. Generate an **invitation message** for the friend.
-#     4. Once all details are collected, format them like this:
-    
-#         ✅ **Friend's Rocket.Chat ID:** [user_id]
-#         ✅ **Invitation Message:** [message]  
-        
-#         📩 *Thank you! Now contacting your friend...*
-
-#     """
-
-#     response = generate(
-#         model='4o-mini',
-#         system=system,
-#         query=message,
-#         temperature=0.7,
-#         lastk=10,
-#         session_id=sid,
-#         rag_usage=False
-#     )
-
-#     agent_response = response.get('response', "⚠️ Sorry, something went wrong while generating the invitation.")
-
-#     # Extract user ID and message using regex
-#     match_user_id = re.search(r"Friend's Rocket.Chat ID: (.+)", agent_response)
-#     match_message = re.search(r"Invitation Message: (.+)", agent_response)
-
-#     if match_user_id and match_message:
-#         print("FOUND match_user_id and match_message")
-#         user_id = match_user_id.group(1).strip()
-#         message_text = match_message.group(1).strip()
-
-#         # Send the message via Rocket.Chat and get a serializable response
-#         rocket_chat_response = RC_message(user_id, message_text)
-
-#         print(str(agent_response))
-        
-#         return jsonify({
-#             "agent_response": agent_response,
-#             "status": "Message Sent",
-#             "rocket_chat_response": rocket_chat_response  # This is now a dictionary
-#         })
-    
-    
-    
-#     print(str(agent_response))
-#     return jsonify({
-#         "agent_response": agent_response,
-#         "status": "error",
-#         "message": "⚠️ Missing required information. Please try again."
-#     })
-
-
-   
-    
-
 def RC_message(user_id, message, buttons=None):
     print("in RC_message function")
     url = "https://chat.genaiconnect.net/api/v1/chat.postMessage" #URL of RocketChat server, keep the same
@@ -449,26 +354,30 @@ def booking():
 def main():
     print("starting main exec")
     """Handles user messages and manages session storage."""
-    global session_dict
-
+    
     data = request.get_json()
     message = data.get("text", "").strip()
     user = data.get("user_name", "Unknown")
 
+    # Load sessions at the beginning of each request
+    session_dict = load_sessions()
+    
     print("Current session dict:", session_dict)
     print("Current user:", user)
 
-    # Load user session if it exists, otherwise create a new one
+    # Initialize user session if it doesn't exist
     if user not in session_dict:
         print("new user", user)
         session_dict[user] = {"session_id": f"{user}-session", "api_results": [], "top_choice": ""}
+        save_sessions(session_dict)  # Save immediately after creating new session
 
     sid = session_dict[user]["session_id"]
     print("Session ID:", sid)
 
     # Get response from assistant
-    response = restaurant_assistant_llm(message, user)
+    response = restaurant_assistant_llm(message, user, session_dict)
     
+    # Save session data at the end of the request
     save_sessions(session_dict)
 
     print("PRINTING IN MAIN")
