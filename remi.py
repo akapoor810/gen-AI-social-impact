@@ -70,30 +70,6 @@ def restaurant_assistant_llm(message, user, session_dict):
     """Handles the full conversation and recommends a restaurant."""
     sid = session_dict[user]["session_id"]
     
-    # Check if this is a new search request by looking for cuisine/location/budget patterns
-    new_search_indicators = [
-        r"cuisine.*preference", 
-        r"budget.*preference",
-        r"location.*preference",
-        r"what type of food",
-        r"mood for",
-        r"looking for"
-    ]
-    
-    # If message indicates a new search is starting, reset the search parameters
-    is_new_search = any(re.search(pattern, message.lower()) for pattern in new_search_indicators)
-    if is_new_search:
-        print("New search detected - resetting previous search results")
-        session_dict[user]["api_results"] = []
-        session_dict[user]["top_choice"] = ""
-        session_dict[user]["current_search"] = {
-            "cuisine": None,
-            "budget": None,
-            "location": None,
-            "radius": None
-        }
-        save_sessions(session_dict)
-    
     response = generate(
         model="4o-mini",
         system="""
