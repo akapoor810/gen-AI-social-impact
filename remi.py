@@ -84,7 +84,8 @@ session_dict = load_sessions()
 
 ### --- MAIN BOT FUNCTION --- ###
 def restaurant_assistant_llm(message, user):
-    print("res LLM")
+    print("in res LLM")
+    print(f"user input: {message}")
     """Handles the full conversation and recommends a restaurant."""
     sid = session_dict[user]["session_id"]
     response = generate(
@@ -189,7 +190,8 @@ def restaurant_assistant_llm(message, user):
             save_sessions(session_dict)  # Persist changes
             response_obj["attachments"] = add_friends_button
 
-    if "top choice" in message.lower():
+    elif "top choice" in message.lower():
+        print("getting top choice from the following results: ", session_dict[user]["api_results"])
         match = re.search(r"top choice[:\s]*(\d+)", re.sub(r"[^\x00-\x7F]+", "", message.lower()))
         if match:
             index = int(match.group(1).strip())  # Strip any unexpected spaces
