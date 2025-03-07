@@ -1,3 +1,5 @@
+from flask import send_file
+from datetime import datetime
 import os
 import json
 import requests
@@ -228,19 +230,31 @@ def restaurant_assistant_llm(message, user, session_dict):
         response_obj["text"] = "Table for one it is! Let me know your **reservation date and time**. 😊✨"
 
 
+    if "Reservation date:" in response_text:
+        match_date = re.search(r'Reservation date:\s*(\w+\s\d{1,2}(?:st|nd|rd|th)?)', response_text)
+        if match_date:
+            reservation_date_str = match_date.group(1)
+            # Convert "March 8th" to "2023-03-08" (add the current year)
+            session_dict[user]["res_date"] = datetime.strptime(reservation_date_str + " 2025", "%B %d %Y").strftime("%Y-%m-%d")
+            save_sessions(session_dict)
+            print("Reservation Date:", session_dict[user]["res_date"])
+    
+    if "Reservation time:" in response_text:
+        match_time = re.search(r'Reservation time:\s*(\d{1,2} (AM|PM))', response_text)
+        if match_time:
+            reservation_time_str = match_time.group(1)
+            # Convert "12 PM" to "12:00" (24-hour format)
+            session_dict[user]["res_time"] = datetime.strptime(reservation_time_str, "%I %p").strftime("%H:%M")
+            save_sessions(session_dict)
+            print("Reservation Time:", session_dict[user]["res_time"])
+
+
     tool = extract_tool(response_text)
     if tool:
         print("GOING TO EVALUATE:", tool)
         response = eval(tool)
         print(f"📩 Rocket.Chat API Response: {response}")
         response_obj["text"] = f"📩 Invitation sent on Rocket.Chat!"
-
-    
-    # if "rc_message" in response_text.lower():
-        # tool = extract_tool(response_text.lower())
-        # response = eval(response_text)
-        # print(f"📩 Rocket.Chat API Response: {response}")
-        # response_obj["text"] = f"📩 Invitation sent on Rocket.Chat!"
         
     if "yes_response_" in message.lower():
         response_obj["text"] = "Your friend has accepted your invite!"
@@ -361,29 +375,75 @@ def RC_message(user_id, message):
 
 
 
-def handle_friend_response(message):
-    # system = """
-    
-    # """
-
-    # response = generate(model = '4o-mini',
-    #     system = system,
-    #     query = query,
-    #     temperature=0.7,
-    #     lastk=10,
-    #     session_id='DEMO_AGENT_EMAIL',
-    #     rag_usage = False)
-    
+def handle_friend_response(user, message, session_dict):    
     user_id = message.split("_")[-1]  # Extract user ID
     response_type = "accepted" if message.startswith("yes_response_") else "declined"
 
     print(f"📩 User {user_id} has {response_type} the invitation.")
 
-    response_text = (
-        f"🎉 Great! {user_id} has accepted the invitation!" 
-        if response_type == "accepted" 
-        else f"😢 {user_id} has declined the invitation."
-    )
+    response_obj = {
+        "text": ""
+    }
+
+    if response_type == "accepted":
+        response_obj["text"] = f"🎉 Great! {user_id} has accepted the invitation!" 
+        
+        event_date = session_dict[user]["res_date"]
+        event_time = session_dict[user]["res_time"]
+        top_choice = session_dict[user]["top_choice"]
+        name_match = re.search(r'\*\*(.*?)\*\*', top_choice)
+        location_match = re.search(r'in (.*)', top_choice)
+
+        if name_match and location_match:
+            event_name = "Invite: " + name_match.group(1).strip()  # Extract restaurant name
+            location = location_match.group(1).strip()  # Extract address
+
+            # Generate calendar invite
+            # invite_filename = generate_calendar_invite(event_name, location, event_date, event_time)
+
+            response_obj["text"] += f"\nSending calendar invite with the following info: Date: {event_date}, Time: {event_time}, Name: {event_name}, Location: {location}"
+            # response_obj["text"] += f"\nHere's your calendar invite: [Click to download](http://yourserver.com/download/{invite_filename})"
+    else:
+        response_obj["text"] = f"😢 {user_id} has declined the invitation."
+
+    return response_obj
+
+
+# def generate_calendar_invite(event_name, location, event_date, event_time):
+#     """Creates a .ics file for the event and returns the filename."""
+
+#     print("date: ", event_date, ", time: ", event_time)
+
+#     event_start = f"{event_date}T{event_time}00"
+#     event_end = f"{event_date}T{str(int(event_time) + 100)}00"  # Adds 1 hour
+
+#     ics_content = f"""BEGIN:VCALENDAR
+#         VERSION:2.0
+#         BEGIN:VEVENT
+#         SUMMARY:{event_name}
+#         LOCATION:{location}
+#         DTSTART:{event_start}
+#         DTEND:{event_end}
+#         DESCRIPTION:{None}
+#         END:VEVENT
+#         END:VCALENDAR
+#         """
+
+#     filename = f"{event_name.replace(' ', '_')}.ics"
+#     filepath = os.path.join("invites", filename)
+
+#     # Save the file
+#     os.makedirs("invites", exist_ok=True)
+#     with open(filepath, "w") as file:
+#         file.write(ics_content)
+
+#     return filename
+
+
+# @app.route('/download/<filename>', methods=['GET'])
+# def download_invite(filename):
+#     """Serves the generated .ics calendar file."""
+#     return send_file(os.path.join("invites", filename), as_attachment=True)
 
 
 # Extracts the tool from text using regex
@@ -442,7 +502,9 @@ def main():
             "session_id": conversation_id,
             "api_results": [],
             "top_choice": "",
-            "current_search": {}
+            "current_search": {},
+            "res_date": "",
+            "res_time": ""
         }
         save_sessions(session_dict)  # Save immediately after creating new session
 
@@ -452,8 +514,7 @@ def main():
 
     # **Check if the message is a button response from friend**
     if message.startswith("yes_response_") or message.startswith("no_response_"):
-        response = handle_friend_response(message)
-
+        response = handle_friend_response(user, message, session_dict)
 
     # Get response from assistant
     else:
