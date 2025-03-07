@@ -467,7 +467,6 @@ def main():
 
     # Create a unique conversation ID based on time to better separate sessions
     import time
-    conversation_id = f"{user}-{int(time.time())}"
 
     # Load sessions at the beginning of each request
     session_dict = load_sessions()
@@ -480,12 +479,9 @@ def main():
         print(f"Starting new conversation for {user}")
         if user in session_dict:
             # Create new session
-            session_dict[user] = {
-                "session_id": conversation_id,
-                "api_results": [],
-                "top_choice": "",
-                "current_search": {}
-            }
+            session_dict[user]["api_results"] = []
+            session_dict[user]["top_choice"] = ""
+            session_dict[user]["current_search"] = {}
             save_sessions(session_dict)
             print(f"Created new session for {user}")
 
@@ -493,7 +489,7 @@ def main():
     if user not in session_dict:
         print("new user", user)
         session_dict[user] = {
-            "session_id": conversation_id,
+            "session_id": f"{user}-session",
             "api_results": [],
             "top_choice": "",
             "current_search": {},
@@ -501,8 +497,6 @@ def main():
             "res_time": ""
         }
         save_sessions(session_dict)  # Save immediately after creating new session
-
-    sid = session_dict[user]["session_id"]
 
     # **Check if the message is a button response from friend**
     if message.startswith("yes_response_") or message.startswith("no_response_"):
