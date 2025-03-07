@@ -264,12 +264,19 @@ def restaurant_assistant_llm(message, user, session_dict):
 
         # Log response from Rocket.Chat API
 
-    if "rc_message" in response_text.lower():
+    tool = extract_tool(response_text)
+    if tool:
         print("GOING TO SEND:", response_text.lower())
-        # tool = extract_tool(response_text.lower())
-        response = eval(response_text)
+        response = eval(tool)
         print(f"📩 Rocket.Chat API Response: {response}")
         response_obj["text"] = f"📩 Invitation sent on Rocket.Chat!"
+
+    
+    # if "rc_message" in response_text.lower():
+        # tool = extract_tool(response_text.lower())
+        # response = eval(response_text)
+        # print(f"📩 Rocket.Chat API Response: {response}")
+        # response_obj["text"] = f"📩 Invitation sent on Rocket.Chat!"
         
     if "yes_response_" in message.lower():
         response_obj["text"] = "Your friend has accepted your invite!"
