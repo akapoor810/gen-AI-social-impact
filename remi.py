@@ -112,9 +112,9 @@ def restaurant_assistant_llm(message, user, session_dict):
         session_id=sid,
         rag_usage=False
     )
-    response_text = response.get("response", "⚠️ Sorry, I couldn't process that. Could you rephrase?").strip()
+    response_text = response.get("response", "⚠️ Sorry, I couldn't process that. Could you rephrase?").strip() if isinstance(response, dict) else response.strip()
 
-    # Initialize an object for user preferences
+    # Initialize an object for suser preferences
     user_session = {
             "state": "conversation",
             "preferences": {"cuisine": None, "budget": None, "location": None, "radius": None}
