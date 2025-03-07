@@ -69,6 +69,31 @@ def restaurant_assistant_llm(message, user, session_dict):
     print(f"user input: {message}")
     """Handles the full conversation and recommends a restaurant."""
     sid = session_dict[user]["session_id"]
+    
+    # Check if this is a new search request by looking for cuisine/location/budget patterns
+    new_search_indicators = [
+        r"cuisine.*preference", 
+        r"budget.*preference",
+        r"location.*preference",
+        r"what type of food",
+        r"mood for",
+        r"looking for"
+    ]
+    
+    # If message indicates a new search is starting, reset the search parameters
+    is_new_search = any(re.search(pattern, message.lower()) for pattern in new_search_indicators)
+    if is_new_search:
+        print("New search detected - resetting previous search results")
+        session_dict[user]["api_results"] = []
+        session_dict[user]["top_choice"] = ""
+        session_dict[user]["current_search"] = {
+            "cuisine": None,
+            "budget": None,
+            "location": None,
+            "radius": None
+        }
+        save_sessions(session_dict)
+    
     response = generate(
         model="4o-mini",
         system="""
@@ -104,7 +129,7 @@ def restaurant_assistant_llm(message, user, session_dict):
 
         query=message,
         temperature=0.7,
-        lastk=20,
+        lastk=10,
         session_id=sid,
         rag_usage=False
     )
@@ -123,12 +148,19 @@ def restaurant_assistant_llm(message, user, session_dict):
         match = re.search(r"Cuisine noted[:*\s]*(\S.*)", ascii_text)  # Capture actual text after "*Cuisine noted:*"
         if match:
             user_session["preferences"]["cuisine"] = match.group(1).strip()  # Remove extra spaces
+            # Store in session for persistence
+            if "current_search" not in session_dict[user]:
+                session_dict[user]["current_search"] = {}
+            session_dict[user]["current_search"]["cuisine"] = match.group(1).strip()
 
     if "Budget noted:" in response_text:
         ascii_text = re.sub(r"[^\x00-\x7F]+", "", response_text)  # Remove non-ASCII characters
         match = re.search(r"Budget noted[:*\s]*(\d+)", ascii_text)  # Extract only the number
         if match:
             user_session["preferences"]["budget"] = match.group(1)  # Store as string (convert if needed)
+            if "current_search" not in session_dict[user]:
+                session_dict[user]["current_search"] = {}
+            session_dict[user]["current_search"]["budget"] = match.group(1)
         else:
             user_session["preferences"]["budget"] = None  # Handle cases where no number is found
     
@@ -137,6 +169,9 @@ def restaurant_assistant_llm(message, user, session_dict):
         match = re.search(r"Location noted[:*\s]*(\S.*)", ascii_text)  # Capture actual text after "*Location noted:*"
         if match:
             user_session["preferences"]["location"] = match.group(1).strip()  # Remove extra spaces
+            if "current_search" not in session_dict[user]:
+                session_dict[user]["current_search"] = {}
+            session_dict[user]["current_search"]["location"] = match.group(1).strip()
     
     if "Search radius noted:" in response_text:
         ascii_text = re.sub(r"[^\x00-\x7F]+", "", response_text)  # Remove non-ASCII characters
@@ -145,6 +180,9 @@ def restaurant_assistant_llm(message, user, session_dict):
             print(match)
             metric_radius = round(int(match.group(1)) * 1609.34)
             user_session["preferences"]["radius"] = str(metric_radius)  # Store as string (convert if needed)
+            if "current_search" not in session_dict[user]:
+                session_dict[user]["current_search"] = {}
+            session_dict[user]["current_search"]["radius"] = str(metric_radius)
         else:
             user_session["preferences"]["radius"] = None  # Handle cases where no number is found
 
@@ -153,11 +191,23 @@ def restaurant_assistant_llm(message, user, session_dict):
         "text": response_text
     }
 
+    # If we already have preferences stored in the session, use those instead
+    if "current_search" in session_dict[user]:
+        for key in ["cuisine", "budget", "location", "radius"]:
+            if session_dict[user]["current_search"].get(key):
+                user_session["preferences"][key] = session_dict[user]["current_search"][key]
+
     # Handle different scenarios and update the response text or add attachments as needed
     if "now searching" in response_text.lower():
+        # Clear previous API results before performing a new search
+        session_dict[user]["api_results"] = []
+        session_dict[user]["top_choice"] = ""
+        save_sessions(session_dict)  # Save before the API call
+        
         api_results = search_restaurants(user_session)
         response_obj["text"] = api_results[0]
 
+        # Store new results
         session_dict[user]["api_results"] = api_results[1]
         save_sessions(session_dict)  # Persist changes
         print("The api results stored in the dictionary: ", session_dict[user]["api_results"])
@@ -213,7 +263,7 @@ def restaurant_assistant_llm(message, user, session_dict):
     reservation_time = reservation_time_match.group(1).strip() if reservation_time_match else "a time"
 
     # Extract restaurant name from session_dict
-    top_choice = session_dict[user]["top_choice"]
+    top_choice = session_dict[user].get("top_choice", "")
 
     # Use regex to extract just the restaurant name
     restaurant_name_match = re.search(r"\*\*(.*?)\*\*", top_choice)
@@ -278,23 +328,34 @@ def search_restaurants(user_session):
     location = user_session["preferences"]["location"]
     radius = user_session["preferences"]["radius"]
 
+    print(f"Searching for restaurants with params: cuisine={cuisine}, budget={budget}, location={location}, radius={radius}")
+
     headers = {
         "Authorization": f"Bearer {API_KEY}",
         "accept": "application/json"
     }
     
+    # Ensure radius is valid (Yelp API has a maximum of 40000 meters)
+    try:
+        radius_val = int(radius) if radius else 8000
+        if radius_val > 40000:
+            radius_val = 40000
+    except (ValueError, TypeError):
+        radius_val = 8000
+    
     params = {
         "term": cuisine,
         "location": location,
         "price": budget,  # Yelp API uses 1 (cheap) to 4 (expensive)
-        "radius": 8000, # HARDCODED THIS TO AVOID ERRORS FOR NOW!
+        "radius": radius_val,
         "limit": 5,  # top
         "sort_by": "best_match"
     }
 
+    print(f"API request params: {params}")
     response = requests.get(YELP_API_URL, headers=headers, params=params)
 
-    res = [f"Here are some budget-friendly suggestions we found for {cuisine} cuisine within a {round(float(radius) * 0.000621371)}-mile radius of {location}!\n"]
+    res = [f"Here are some budget-friendly suggestions we found for {cuisine} cuisine within a {round(float(radius_val) * 0.000621371)}-mile radius of {location}!\n"]
     if response.status_code == 200:
         data = response.json()
         if "businesses" in data and data["businesses"]:
@@ -308,9 +369,9 @@ def search_restaurants(user_session):
             
             return ["".join(res), res]
         else:
-            return "⚠️ Sorry, I couldn't find any matching restaurants. Try adjusting your preferences!"
+            return ["⚠️ Sorry, I couldn't find any matching restaurants. Try adjusting your preferences!", []]
     
-    return f"⚠️ Yelp API request failed. Error {response.status_code}: {response.text}"
+    return [f"⚠️ Yelp API request failed. Error {response.status_code}: {response.text}", []]
 
 
 def RC_message(user_id, message, buttons=None):
@@ -343,6 +404,7 @@ def RC_message(user_id, message, buttons=None):
     # Print response status and content
     print(response.status_code)
     print(response.json())
+    return response.json()
 
 
 def booking():
@@ -359,16 +421,42 @@ def main():
     message = data.get("text", "").strip()
     user = data.get("user_name", "Unknown")
 
+    # Create a unique conversation ID based on time to better separate sessions
+    import time
+    conversation_id = f"{user}-{int(time.time())}"
+
     # Load sessions at the beginning of each request
     session_dict = load_sessions()
     
     print("Current session dict:", session_dict)
     print("Current user:", user)
 
+    # Check if we need to create a new conversation (e.g., if user starts over)
+    if "restart" in message.lower() or "start over" in message.lower() or "new search" in message.lower():
+        print(f"Starting new conversation for {user}")
+        if user in session_dict:
+            # Save old session data with timestamp for debugging
+            old_session_id = session_dict[user]["session_id"]
+            session_dict[f"{user}_old_{int(time.time())}"] = session_dict[user]
+            # Create new session
+            session_dict[user] = {
+                "session_id": conversation_id,
+                "api_results": [],
+                "top_choice": "",
+                "current_search": {}
+            }
+            save_sessions(session_dict)
+            print(f"Created new session for {user}, archived old session {old_session_id}")
+
     # Initialize user session if it doesn't exist
     if user not in session_dict:
         print("new user", user)
-        session_dict[user] = {"session_id": f"{user}-session", "api_results": [], "top_choice": ""}
+        session_dict[user] = {
+            "session_id": conversation_id,
+            "api_results": [],
+            "top_choice": "",
+            "current_search": {}
+        }
         save_sessions(session_dict)  # Save immediately after creating new session
 
     sid = session_dict[user]["session_id"]
