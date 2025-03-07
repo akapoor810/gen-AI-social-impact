@@ -182,6 +182,7 @@ def restaurant_assistant_llm(message, user):
 
         if len(session_dict[user]["api_results"]) > 2:
             response_obj["text"] += "\nWhat is your top choice restaurant? Please type 'Top choice: ' followed by the restaurant's number from the list."
+            save_sessions(session_dict)
         else: 
             # Update user's top choice in session_dict and save to file
             session_dict[user]["top_choice"] = session_dict[user]["api_results"][1]
@@ -211,20 +212,12 @@ def restaurant_assistant_llm(message, user):
 
     if message == "yes_clicked":
         # Invite friends using agent_contact function
-        agent_response = agent_contact(user, session_dict[user]["top_choice"])
-
-        # If the response is a Flask Response object, extract its JSON content
-        if isinstance(agent_response, Response):  
-            agent_response = agent_response.get_json()  # Extract JSON data
-
-        # Ensure we assign only the response text to the front-end
-        response_obj["text"] = agent_response.get("agent_response", "⚠️ No response received from agent.")
-
+        response_obj["text"] = "Great! Let me know your **reservation date and time** and your friend's **Rocket.Chat ID**, and we can get that invitation ready! 😊✨"
 
         
     elif message == "no_clicked":
         # send the agent our restaurant choice
-        response_obj["text"] = "Table for one it is! Please provide the date and time for your reservation."
+        response_obj["text"] = "Table for one it is! Let me know your **reservation date and time**. 😊✨"
         booking()
 
 
@@ -340,73 +333,73 @@ def search_restaurants(user_session):
 # COPIED FROM example_agent_tool
 # TODO: update system instructions to instruct agent to only contact friends when the user has
 # provided the rocket chat IDs of their friends
-def agent_contact(user, message):
-    print("In agent contact")
-    # Ensure user session exists
-    if user not in session_dict:
-        print("IF LOOP: user not in session_dict")
-        return jsonify({"error": "⚠️ No active session found for this user."})
+# def agent_contact(user, message):
+#     print("In agent contact")
+#     # Ensure user session exists
+#     if user not in session_dict:
+#         print("IF LOOP: user not in session_dict")
+#         return jsonify({"error": "⚠️ No active session found for this user."})
 
-    sid = session_dict[user]["session_id"]
-    top_choice = session_dict[user]["top_choice"]  # Ensure it exists
+#     sid = session_dict[user]["session_id"]
+#     top_choice = session_dict[user]["top_choice"]  # Ensure it exists
 
-    system = f"""
-    You are an AI agent helping users invite friends to a restaurant reservation. 
-    The user initially inputs their top restaurant choice.
+#     system = f"""
+#     You are an AI agent helping users invite friends to a restaurant reservation. 
+#     The user initially inputs their top restaurant choice.
 
-    Follow these three steps:
-    1. Ask the user for a **date and time** for their reservation.
-    2. Ask the user for their **friend's Rocket.Chat ID**.
-    3. Generate an **invitation message** for the friend.
-    4. Once all details are collected, format them like this:
+#     Follow these three steps:
+#     1. Ask the user for a **date and time** for their reservation.
+#     2. Ask the user for their **friend's Rocket.Chat ID**.
+#     3. Generate an **invitation message** for the friend.
+#     4. Once all details are collected, format them like this:
     
-        ✅ **Friend's Rocket.Chat ID:** [user_id]
-        ✅ **Invitation Message:** [message]  
+#         ✅ **Friend's Rocket.Chat ID:** [user_id]
+#         ✅ **Invitation Message:** [message]  
         
-        📩 *Thank you! Now contacting your friend...*
+#         📩 *Thank you! Now contacting your friend...*
 
-    """
+#     """
 
-    response = generate(
-        model='4o-mini',
-        system=system,
-        query=message,
-        temperature=0.7,
-        lastk=10,
-        session_id=sid,
-        rag_usage=False
-    )
+#     response = generate(
+#         model='4o-mini',
+#         system=system,
+#         query=message,
+#         temperature=0.7,
+#         lastk=10,
+#         session_id=sid,
+#         rag_usage=False
+#     )
 
-    agent_response = response.get('response', "⚠️ Sorry, something went wrong while generating the invitation.")
+#     agent_response = response.get('response', "⚠️ Sorry, something went wrong while generating the invitation.")
 
-    # Extract user ID and message using regex
-    match_user_id = re.search(r"Friend's Rocket.Chat ID: (.+)", agent_response)
-    match_message = re.search(r"Invitation Message: (.+)", agent_response)
+#     # Extract user ID and message using regex
+#     match_user_id = re.search(r"Friend's Rocket.Chat ID: (.+)", agent_response)
+#     match_message = re.search(r"Invitation Message: (.+)", agent_response)
 
-    if match_user_id and match_message:
-        print("FOUND match_user_id and match_message")
-        user_id = match_user_id.group(1).strip()
-        message_text = match_message.group(1).strip()
+#     if match_user_id and match_message:
+#         print("FOUND match_user_id and match_message")
+#         user_id = match_user_id.group(1).strip()
+#         message_text = match_message.group(1).strip()
 
-        # Send the message via Rocket.Chat and get a serializable response
-        rocket_chat_response = RC_message(user_id, message_text)
+#         # Send the message via Rocket.Chat and get a serializable response
+#         rocket_chat_response = RC_message(user_id, message_text)
 
-        print(str(agent_response))
+#         print(str(agent_response))
         
-        return jsonify({
-            "agent_response": agent_response,
-            "status": "Message Sent",
-            "rocket_chat_response": rocket_chat_response  # This is now a dictionary
-        })
+#         return jsonify({
+#             "agent_response": agent_response,
+#             "status": "Message Sent",
+#             "rocket_chat_response": rocket_chat_response  # This is now a dictionary
+#         })
     
     
     
-    print(str(agent_response))
-    return jsonify({
-        "agent_response": agent_response,
-        "status": "error",
-        "message": "⚠️ Missing required information. Please try again."
-    })
+#     print(str(agent_response))
+#     return jsonify({
+#         "agent_response": agent_response,
+#         "status": "error",
+#         "message": "⚠️ Missing required information. Please try again."
+#     })
 
 
    
