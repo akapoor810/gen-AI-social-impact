@@ -390,7 +390,7 @@ def handle_friend_response(message):
 def extract_tool(text):
     import re
 
-    match = re.search(r'RC_message\([^)]*\)', text)
+    match = re.search(r'get_page\([^)]*"\)$', text)
     if match:
         return match.group() 
 
