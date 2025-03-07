@@ -44,7 +44,6 @@ add_friends_button = [
 ### --- SESSION MANAGEMENT FUNCTIONS --- ###
 def load_sessions():
     """Load stored sessions from a JSON file."""
-    print("Loading session data...")
     if os.path.exists(SESSION_FILE):
         with open(SESSION_FILE, "r") as file:
             try:
@@ -190,7 +189,6 @@ def restaurant_assistant_llm(message, user, session_dict):
         # Store new results
         session_dict[user]["api_results"] = api_results[1]
         save_sessions(session_dict)  # Persist changes
-        print("The api results stored in the dictionary: ", session_dict[user]["api_results"])
 
         if len(session_dict[user]["api_results"]) > 2:
             response_obj["text"] += "\nWhat is your top choice restaurant? Please type 'Top choice: ' followed by the restaurant's number from the list."
@@ -205,7 +203,6 @@ def restaurant_assistant_llm(message, user, session_dict):
         match = re.search(r"top choice[:\s]*(\d+)", re.sub(r"[^\x00-\x7F]+", "", message.lower()))
         if match:
             index = int(match.group(1).strip())  # Strip any unexpected spaces
-            print(f"user selected restaurant #{index}")
 
             # Ensure the index is within the range of available results
             if 1 <= index < len(session_dict[user]["api_results"]):
@@ -260,15 +257,15 @@ def restaurant_assistant_llm(message, user, session_dict):
     return response_obj
 
 
+
+
+# """Uses Yelp API to find a restaurant based on user preferences."""
 def search_restaurants(user_session):
-    # """Uses Yelp API to find a restaurant based on user preferences."""
     
     cuisine = user_session["preferences"]["cuisine"]
     budget = user_session["preferences"]["budget"]
     location = user_session["preferences"]["location"]
     radius = user_session["preferences"]["radius"]
-
-    print(f"Searching for restaurants with params: cuisine={cuisine}, budget={budget}, location={location}, radius={radius}")
 
     headers = {
         "Authorization": f"Bearer {API_KEY}",
@@ -314,6 +311,8 @@ def search_restaurants(user_session):
 
 
     
+
+# """Tool to send message to other user on Rocketchat"""
 def RC_message(user_id, message):
     print("in RC_message function")
     url = "https://chat.genaiconnect.net/api/v1/chat.postMessage" #URL of RocketChat server, keep the same
@@ -368,6 +367,7 @@ def RC_message(user_id, message):
 
 
 
+# """Handle other user's button response"""
 def handle_friend_response(user, message, session_dict):    
     user_id = message.split("_")[-1]  # Extract user ID
     response_type = "accepted" if message.startswith("yes_response_") else "declined"
@@ -381,6 +381,7 @@ def handle_friend_response(user, message, session_dict):
     if response_type == "accepted":
         response_obj["text"] = f"🎉 Great! {user_id} has accepted the invitation!" 
         
+        # Collecting info to create calendar invite
         event_date = session_dict[user]["res_date"]
         event_time = session_dict[user]["res_time"]
         top_choice = session_dict[user]["top_choice"]
@@ -439,7 +440,10 @@ def handle_friend_response(user, message, session_dict):
 #     return send_file(os.path.join("invites", filename), as_attachment=True)
 
 
-# Extracts the tool from text using regex
+
+
+
+# """Extracts the tool from text using regex"""
 def extract_tool(text):
     import re
 
@@ -452,10 +456,10 @@ def extract_tool(text):
 
 
 ### --- FLASK ROUTE TO HANDLE USER REQUESTS --- ###
+# """Handles user messages and manages session storage."""
 @app.route('/query', methods=['POST'])
 def main():
     print("starting main exec")
-    """Handles user messages and manages session storage."""
     
     data = request.get_json()
     message = data.get("text", "").strip()
@@ -475,9 +479,6 @@ def main():
     if "restart" in message.lower() or "start over" in message.lower() or "new search" in message.lower():
         print(f"Starting new conversation for {user}")
         if user in session_dict:
-            # Save old session data with timestamp for debugging
-            old_session_id = session_dict[user]["session_id"]
-            session_dict[f"{user}_old_{int(time.time())}"] = session_dict[user]
             # Create new session
             session_dict[user] = {
                 "session_id": conversation_id,
@@ -486,7 +487,7 @@ def main():
                 "current_search": {}
             }
             save_sessions(session_dict)
-            print(f"Created new session for {user}, archived old session {old_session_id}")
+            print(f"Created new session for {user}")
 
     # Initialize user session if it doesn't exist
     if user not in session_dict:
@@ -502,8 +503,6 @@ def main():
         save_sessions(session_dict)  # Save immediately after creating new session
 
     sid = session_dict[user]["session_id"]
-    print("Session ID:", sid)
-
 
     # **Check if the message is a button response from friend**
     if message.startswith("yes_response_") or message.startswith("no_response_"):
@@ -515,8 +514,6 @@ def main():
     
     # Save session data at the end of the request
     save_sessions(session_dict)
-
-    print("PRINTING IN MAIN")
     return jsonify(response)
 
 
