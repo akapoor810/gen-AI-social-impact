@@ -429,7 +429,7 @@ def booking():
 ### --- FLASK ROUTE TO HANDLE USER REQUESTS --- ###
 @app.route('/query', methods=['POST'])
 def main():
-    print("startiing main exec")
+    print("starting main exec")
     """Handles user messages and manages session storage."""
     global session_dict
 
@@ -444,13 +444,15 @@ def main():
     if user not in session_dict:
         print("new user", user)
         session_dict[user] = {"session_id": f"{user}-session", "api_results": [], "top_choice": ""}
-        save_sessions(session_dict)
 
     sid = session_dict[user]["session_id"]
     print("Session ID:", sid)
 
     # Get response from assistant
     response = restaurant_assistant_llm(message, user)
+    
+    save_sessions(session_dict)
+
     print("PRINTING IN MAIN")
     return jsonify(response)
 
