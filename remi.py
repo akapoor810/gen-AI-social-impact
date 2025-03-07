@@ -72,7 +72,7 @@ def restaurant_assistant_llm(message, user, session_dict):
     
     response = generate(
         model="4o-mini",
-        system="""
+        system=f"""
             You are a friendly restaurant assistant named REMI 🍽️. Your job is to help the user find a place to eat.
             You always use a lot of **emojis** and are **fun and quirky** in all of your responses.
             
@@ -97,7 +97,7 @@ def restaurant_assistant_llm(message, user, session_dict):
             - When the user provides a **reservation date and time**, remember these details and respond with the following in a bulleted list format:
                 "Reservation time: [time]\nReservation date: [date]\n
             - If the user tags a friend using '@' (e.g., "@john_doe"), generate a friendly **personalized invitation message** including:
-                - The **name of the restaurant** which the user has indicated is their top choice
+                - The **name of the restaurant** from {session_dict[user]["top_choice"]}
                 - The **reservation date**
                 - The **reservation time**
                 - Request for the friend to confirm if they will attend
@@ -265,6 +265,7 @@ def restaurant_assistant_llm(message, user, session_dict):
         # Log response from Rocket.Chat API
 
     if "rc_message" in response_text.lower():
+        print("GOING TO SEND:", response_text.lower())
         tool = extract_tool(response_text.lower())
         response = eval(tool)
         print(f"📩 Rocket.Chat API Response: {response}")
