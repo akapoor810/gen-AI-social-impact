@@ -269,7 +269,7 @@ def restaurant_assistant_llm(message, user, session_dict):
         # tool = extract_tool(response_text.lower())
         response = eval(response_text)
         print(f"📩 Rocket.Chat API Response: {response}")
-        f"📩 Invitation sent on Rocket.Chat!"
+        response_obj["text"] = f"📩 Invitation sent on Rocket.Chat!"
         
     if "yes_response_" in message.lower():
         response_obj["text"] = "Your friend has accepted your invite!"
