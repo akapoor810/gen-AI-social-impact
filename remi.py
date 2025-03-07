@@ -190,7 +190,7 @@ def restaurant_assistant_llm(message, user):
             save_sessions(session_dict)  # Persist changes
             response_obj["attachments"] = add_friends_button
 
-    elif "top choice" in message.lower():
+    if "top choice" in message.lower():
         print("getting top choice from the following results: ", session_dict[user]["api_results"])
         match = re.search(r"top choice[:\s]*(\d+)", re.sub(r"[^\x00-\x7F]+", "", message.lower()))
         if match:
@@ -282,6 +282,7 @@ def restaurant_assistant_llm(message, user):
             "text": f"📩 Invitation sent to **{rocket_chat_id}** on Rocket.Chat! Thank you for using REMI!"
         }
 
+    save_sessions(session_dict)
     print(str(response_obj))
 
     return response_obj
