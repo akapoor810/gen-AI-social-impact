@@ -96,11 +96,14 @@ def restaurant_assistant_llm(message, user, session_dict):
             
             - When the user provides a **reservation date and time**, remember these details and respond with the following in a bulleted list format:
                 "Reservation time: [time]\nReservation date: [date]\n
-            - If the user tags a friend using '@' (e.g., "@john_doe"), generate a **personalized invitation message** including:
-                - The **restaurant name**
+            - If the user tags a friend using '@' (e.g., "@john_doe"), generate a friendly **personalized invitation message** including:
+                - The **name of the restaurant** which the user has indicated is their top choice
                 - The **reservation date**
                 - The **reservation time**
-                - A friendly, inviting tone
+                - Request for the friend to confirm if they will attend
+            - Ask the user to confirm if they'd like to send the message. If they affirm, respond with
+            "RC_message(user_id, message)" with the parameters filled in appropriately.
+            Example usage: RC_message("anika.kapoor", "join me for dinner")
         """,
 
         query=message,
@@ -220,22 +223,53 @@ def restaurant_assistant_llm(message, user, session_dict):
     
 
     if message == "yes_clicked":
-        # Invite friends using agent_contact function
-        agent_contact(session_dict[user]['top_choice'], user, session_dict)
-        # response_obj["text"] = "Great! Please let me know your **reservation date and time** AND your friend's **Rocket.Chat ID**, and we can get that invitation ready! 😊✨"
+        response_obj["text"] = "Great! Let me know your **reservation date and time** and your friend's **Rocket.Chat ID**, and we can get that invitation ready! 😊✨"
     elif message == "no_clicked":
         # send the agent our restaurant choice
-        response_obj["text"] = f"Table for one it is! Let me know your **reservation date and time** for {session_dict[user]['top_choice']}. 😊✨"
+        response_obj["text"] = "Table for one it is! Let me know your **reservation date and time**. 😊✨"
 
+
+    # print("current details collected: ", user_session['preferences'])
+    # # Extract restaurant name, reservation date, and reservation time from response_text
+    # reservation_date_match = re.search(r"Reservation date[:*\s]*(\S.*)", response_text)
+    # reservation_time_match = re.search(r"Reservation time[:*\s]*(\S.*)", response_text)
+
+    # reservation_date = reservation_date_match.group(1).strip() if reservation_date_match else "a date"
+    # reservation_time = reservation_time_match.group(1).strip() if reservation_time_match else "a time"
+
+    # # Extract restaurant name from session_dict
+    # top_choice = session_dict[user].get("top_choice", "")
+
+    # # Use regex to extract just the restaurant name
+    # restaurant_name_match = re.search(r"\*\*(.*?)\*\*", top_choice)
+    # restaurant_name = restaurant_name_match.group(1) if restaurant_name_match else "a restaurant"
+
+    
+    # Check if the user provided a Rocket.Chat ID (i.e., an @username)
+    # match = re.search(r"@(\S+)", message)
+    # if match:
+    #     print("TOP CHOICE" + str(top_choice))
+    #     rocket_chat_id = match.group(1)  # Extract username after "@"
+
+    #     # Send a message via Rocket.Chat
+    #     invitation_message = f"""
         
-    if "confirm" in message.lower():
-        response = agent_contact(message, user, session_dict)
-        print("confirming:", response)
-        
+    #     Hey @{rocket_chat_id}! 🍽️ {user} has invited you to dinner at **{restaurant_name}** on 📅 {reservation_date} at ⏰ {reservation_time}. Let's go! 🎉
+
+    #     Are you able to attend?
+    #     """
+
+    #     # Construct Yes/No buttons
+    #     rc_response = RC_message(f"@{rocket_chat_id}", invitation_message)  # Ensure correct format
+
+        # Log response from Rocket.Chat API
+
         tool = extract_tool(response)
         if tool:
             response = eval(tool)
-    
+            print(f"📩 Rocket.Chat API Response: {response}")
+            f"📩 Invitation sent on Rocket.Chat!"
+        
     if "yes_response_" in message.lower():
         response_obj["text"] = "Your friend has accepted your invite!"
     elif "no_response_" in message.lower():
@@ -247,89 +281,6 @@ def restaurant_assistant_llm(message, user, session_dict):
     return response_obj
 
 
-def agent_contact(message, user, session_dict):
-    print("in agent contact, message: ", message)
-    system = """
-    You are an AI agent designed to handle user requests related to booking a restaurant reservation.
-    The user initially provides you the name of the restaurant they want to go to. Thank them for their
-    choice and then ask them to provide the date and time of the reservation and the username of the friend they want to bring.
-    In addition to your own intelligence, you are given access to a set of tools.
-
-    Think step-by-step, breaking down the task into a sequence of small steps.
-
-    If you can't resolve the query based on your intelligence, ask the user to execute a tool on your behalf and share the results with you.
-    If you want the user to execute a tool on your behalf, strictly only respond with the tool's name and parameters.
-    Example response for using tool: RC_message("anika.kapoor", "message")
-
-    The name of the provided tools and their parameters are given below.
-    The output of tool execution will be shared with you so you can decide your next steps.
-
-    ### PROVIDED TOOLS INFORMATION ###
-    ##1. Tool to send a message
-    Name: RC_message
-    Parameters: user_id, message
-    example usage: RC_message("anika.kapoor", "join me for dinner")
-    Once you have all the parameters to send a message, ask the user to confirm 
-    they want to send the message by typing "Confirm". 
-    If the user types "Confirm," begin your response with 
-    "RC_message(user_id, message)" with user_id and message filled in 
-    appropriately
-
-    """
-    sid = session_dict[user]["session_id"]
-    if not message:
-        print("no message")
-        return jsonify({"status": "ignored"})
-
-    response = generate(model = '4o-mini',
-        system = system,
-        query = message,
-        temperature=0.7,
-        lastk=5,
-        session_id=sid,
-        rag_usage = False)
-
-    try:
-        return response['response']
-    except Exception as e:
-        print(f"Error occured with parsing output: {response}")
-        raise e
-
-
-    # Extract restaurant name, reservation date, and reservation time from response_text
-    reservation_date_match = re.search(r"Reservation date[:*\s]*(\S.*)", response_text)
-    reservation_time_match = re.search(r"Reservation time[:*\s]*(\S.*)", response_text)
-
-    reservation_date = reservation_date_match.group(1).strip() if reservation_date_match else "a date"
-    reservation_time = reservation_time_match.group(1).strip() if reservation_time_match else "a time"
-
-    # Extract restaurant name from session_dict
-    top_choice = session_dict[user].get("top_choice", "")
-
-    # Use regex to extract just the restaurant name
-    restaurant_name_match = re.search(r"\*\*(.*?)\*\*", top_choice)
-    restaurant_name = restaurant_name_match.group(1) if restaurant_name_match else "a restaurant"
-
-    
-    # Check if the user provided a Rocket.Chat ID (i.e., an @username)
-    match = re.search(r"@(\S+)", message)
-    if match:
-        print("TOP CHOICE" + str(top_choice))
-        rocket_chat_id = match.group(1)  # Extract username after "@"
-
-        # Send a message via Rocket.Chat
-        invitation_message = f"""
-        
-        Hey @{rocket_chat_id}! 🍽️ {user} has invited you to dinner at **{restaurant_name}** on 📅 {reservation_date} at ⏰ {reservation_time}. Let's go! 🎉
-
-        Are you able to attend?
-        """
-        rc_response = RC_message(f"@{rocket_chat_id}", invitation_message)  # Ensure correct format
-
-        # Log response from Rocket.Chat API
-        print(f"📩 Rocket.Chat API Response: {rc_response}")
-        response_obj["text"] = f"📩 Invitation sent to **{rocket_chat_id}** on Rocket.Chat!"
-    
 def search_restaurants(user_session):
     print('In search restaurants function')
     # """Uses Yelp API to find a restaurant based on user preferences."""
@@ -385,8 +336,7 @@ def search_restaurants(user_session):
     return [f"⚠️ Yelp API request failed. Error {response.status_code}: {response.text}", []]
 
 
-
-def RC_message(user_id, message, buttons=None):
+def RC_message(user_id, message):
     print("in RC_message function")
     url = "https://chat.genaiconnect.net/api/v1/chat.postMessage" #URL of RocketChat server, keep the same
 
@@ -398,23 +348,23 @@ def RC_message(user_id, message, buttons=None):
     }
 
     buttons = [
-            {
-                "type": "button",
-                "text": "✅ Yes, I'll be there!",
-                "msg": f"yes_response_{user_id}",
-                "msg_in_chat_window": True,
-                "msg_processing_type": "sendMessage",
-                "button_id": "yes_button"
-            },
-            {
-                "type": "button",
-                "text": "❌ No, I can't make it.",
-                "msg": f"no_response_{user_id}",
-                "msg_in_chat_window": True,
-                "msg_processing_type": "sendMessage",
-                "button_id": "no_button"
-            }
-        ]
+        {
+            "type": "button",
+            "text": "✅ Yes, I'll be there!",
+            "msg": f"yes_response_{user_id}",
+            "msg_in_chat_window": True,
+            "msg_processing_type": "sendMessage",
+            "button_id": "yes_button"
+        },
+        {
+            "type": "button",
+            "text": "❌ No, I can't make it.",
+            "msg": f"no_response_{user_id}",
+            "msg_in_chat_window": True,
+            "msg_processing_type": "sendMessage",
+            "button_id": "no_button"
+        }
+    ]
 
     # Payload (data to be sent)
     payload = {
@@ -438,7 +388,6 @@ def RC_message(user_id, message, buttons=None):
     return response.json()
 
 
-
 # Extracts the tool from text using regex
 def extract_tool(text):
     import re
@@ -448,6 +397,7 @@ def extract_tool(text):
         return match.group() 
 
     return
+
 
 
 ### --- FLASK ROUTE TO HANDLE USER REQUESTS --- ###
