@@ -41,30 +41,24 @@ add_friends_button = [
 
 ### --- SESSION MANAGEMENT FUNCTIONS --- ###
 def load_sessions():
-    """Load stored sessions from a JSON file."""
-    print("Loading session data...")
+    """Load stored sessions from a JSON file every time a request is made."""
     if os.path.exists(SESSION_FILE):
-        with open(SESSION_FILE, "r") as file:
-            try:
+        try:
+            with open(SESSION_FILE, "r") as file:
                 session_data = json.load(file)
-                print(f"Loaded session data: {session_data}")
                 return session_data
-            except json.JSONDecodeError:
-                print("Error loading session data, returning empty dict.")
-                return {}  # If file is corrupted, return an empty dict
-    print("No session file found. Returning empty dictionary.")
-    return {}
+        except json.JSONDecodeError:
+            print("⚠️ Error loading session data. Returning empty dictionary.")
+            return {}  # If file is corrupted, return an empty dict
+    return {}  # If file doesn't exist, return an empty dictionary
+
 
 def save_sessions(session_dict):
-    """Save sessions to a JSON file."""
+    """Save sessions to a JSON file after every modification."""
     with open(SESSION_FILE, "w") as file:
         json.dump(session_dict, file, indent=4)
-    print("Session data saved.")
-    
-    # Log the session data to verify persistence
-    with open(SESSION_FILE, "r") as file:
-        saved_data = json.load(file)
-        print("Current session data in file:", saved_data)
+    print("✅ Session data saved:", session_dict)
+
 
 
 
@@ -182,11 +176,11 @@ def restaurant_assistant_llm(message, user):
         api_results = search_restaurants(user_session)
         response_obj["text"] = api_results[0]
 
-        # Save API results to session if they are not empty
+        # Only update session if API results are valid
         if api_results[1]:
-            session_dict[user]["api_results"] = api_results[1]  # Store the results
-            save_sessions(session_dict)  # Persist the changes immediately
-            print("The API results stored in the dictionary: ", session_dict[user]["api_results"])
+            session_dict[user]["api_results"] = api_results[1]
+            print("📌 Storing API results for user:", session_dict[user]["api_results"])
+            save_sessions(session_dict)  # Save immediately to persist data
 
         if len(session_dict[user]["api_results"]) > 2:
             response_obj["text"] += "\nWhat is your top choice restaurant? Please type 'Top choice: ' followed by the restaurant's number from the list."
