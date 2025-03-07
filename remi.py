@@ -248,13 +248,14 @@ def restaurant_assistant_llm(message, user, session_dict):
 
 
 def agent_contact(message, user, session_dict):
+    print("in agent contact, message: ", message)
     system = """
     You are an AI agent designed to handle user requests related to booking a restaurant reservation.
-    The user initially provides you the name of the restaurant they want to go to. They are responsible
-    for providing the date and time of the reservation and the username of the friend they want to bring.
+    The user initially provides you the name of the restaurant they want to go to. Thank them for their
+    choice and then ask them to provide the date and time of the reservation and the username of the friend they want to bring.
     In addition to your own intelligence, you are given access to a set of tools.
 
-    Think step-by-step, breaking down the task into a sequence small steps.
+    Think step-by-step, breaking down the task into a sequence of small steps.
 
     If you can't resolve the query based on your intelligence, ask the user to execute a tool on your behalf and share the results with you.
     If you want the user to execute a tool on your behalf, strictly only respond with the tool's name and parameters.
@@ -277,6 +278,7 @@ def agent_contact(message, user, session_dict):
     """
     sid = session_dict[user]["session_id"]
     if not message:
+        print("no message")
         return jsonify({"status": "ignored"})
 
     response = generate(model = '4o-mini',
