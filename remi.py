@@ -156,12 +156,10 @@ def restaurant_assistant_llm(message, user, session_dict):
         ascii_text = re.sub(r"[^\x00-\x7F]+", "", response_text)  # Remove non-ASCII characters
         match = re.search(r"Search radius noted[:*\s]*(\d+)", ascii_text)  # Extract only the number
         if match:
-            print(match)
-            metric_radius = round(int(match.group(1)) * 1609.34)
-            user_session["preferences"]["radius"] = str(metric_radius)  # Store as string (convert if needed)
+            user_session["preferences"]["radius"] = match.group(1)
             if "current_search" not in session_dict[user]:
                 session_dict[user]["current_search"] = {}
-            session_dict[user]["current_search"]["radius"] = str(metric_radius)
+            session_dict[user]["current_search"]["radius"] = match.group(1)
         else:
             user_session["preferences"]["radius"] = None  # Handle cases where no number is found
 
@@ -274,7 +272,7 @@ def search_restaurants(user_session):
     
     # Ensure radius is valid (Yelp API has a maximum of 40000 meters)
     try:
-        radius_val = int(radius) if radius else 20000
+        radius_val = round(int(radius) * 1609.34) if radius else 20000
         if radius_val > 40000:
             radius_val = 40000
     except (ValueError, TypeError):
@@ -292,7 +290,7 @@ def search_restaurants(user_session):
     print(f"API request params: {params}")
     response = requests.get(YELP_API_URL, headers=headers, params=params)
 
-    res = [f"Here are some budget-friendly suggestions we found for {cuisine} cuisine within a {round(float(radius_val) * 0.000621371)}-mile radius of {location}!\n"]
+    res = [f"Here are some budget-friendly suggestions we found for {cuisine} cuisine within a {radius}-mile radius of {location}!\n"]
     if response.status_code == 200:
         data = response.json()
         if "businesses" in data and data["businesses"]:
