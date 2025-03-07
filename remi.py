@@ -179,7 +179,7 @@ def restaurant_assistant_llm(message, user):
                 print("Got top choice from user:", session_dict[user]["top_choice"])
                 save_sessions(session_dict)
             else:
-                print(f"⚠️ Invalid index: {index} (out of range)")
+                print(f"⚠️ Invalid index: {index} (out of range 1 to {len(session_dict[user]["api_results"])})")
         else:
             print("⚠️ No valid top choice found in message.")
 
