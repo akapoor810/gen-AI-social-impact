@@ -103,7 +103,7 @@ def restaurant_assistant_llm(message, user, session_dict):
                 - Request for the friend to confirm if they will attend
             - Ask the user to confirm if they'd like to send the message. If they affirm, respond with
             "RC_message(user_id, message)" with the parameters filled in appropriately.
-            Example usage: RC_message("anika.kapoor", "join me for dinner")
+            Example usage: RC_message("@anika.kapoor", "join me for dinner")
         """,
 
         query=message,
@@ -266,7 +266,7 @@ def restaurant_assistant_llm(message, user, session_dict):
 
     tool = extract_tool(response_text)
     if tool:
-        print("GOING TO SEND:", response_text.lower())
+        print("GOING TO EVALUATE:", tool)
         response = eval(tool)
         print(f"📩 Rocket.Chat API Response: {response}")
         response_obj["text"] = f"📩 Invitation sent on Rocket.Chat!"
