@@ -87,7 +87,7 @@ def llm_daily(message, user, session_dict):
             3. **Evaluate the user's response** to determine if their symptoms are:
             - **Normal symptoms** → Reassure the patient and offer general wellness tips.
             - **Abnormal symptoms** → Express concern and provide advice to alleviate discomfort.  
-            4. If symptoms are **severe**, gently ask the user if they would like to contact their **emergency contact** (**{session_dict[user]['emergency_contact']}**).  
+            4. If symptoms are **severe**, gently ask the user if they would like to contact their **emergency contact** (**{session_dict[user]['emergency_email']}**).  
 
             ### **Response Guidelines**  
             - **Tone:** Maintain a warm, empathetic, and professional tone.  
@@ -106,7 +106,7 @@ def llm_daily(message, user, session_dict):
 
             ### **Memory & Context Handling**  
             - Retrieve the user's condition from **{session_dict[user]['condition']}** to personalize the questions.  
-            - Retrieve the user's **emergency contact** from **{session_dict[user]['emergency_contact']}** if symptoms seem severe.  
+            - Retrieve the user's **emergency contact** from **{session_dict[user]['emergency_email']}** if symptoms seem severe.  
             - Do **not** forget the session details within a single conversation.
         """,
 
