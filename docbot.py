@@ -121,6 +121,7 @@ def llm_daily(message, user, session_dict):
     # TODO: Determine k value. Determine how to pass advice response to QA agent
     # play around with RAG threshold
     response_text = response.get("response", "⚠️ Sorry, I couldn't process that. Could you rephrase?").strip() if isinstance(response, dict) else response.strip()
+    print(response_text)
 
     # Create the response object with the basic text
     response_obj = {
@@ -197,7 +198,7 @@ def main():
         response = {"text": "Calling first_interaction()" }
         # response = first_interaction(message, user)
     else:
-        schedule.every().day.at("09:00").do(llm_daily)
+        # schedule.every().day.at("09:00").do(llm_daily)
         response = llm_daily(message, user, session_dict)
 
         while True:
