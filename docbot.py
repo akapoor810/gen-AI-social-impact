@@ -190,6 +190,7 @@ def main():
             "news_pref": ""
         }
         save_sessions(session_dict)  # Save immediately after creating new session
+        print(session_dict[user]["condition"])
         rag_upload(session_dict[user]["condition"])
 
     if session_dict[user]["onboarding_stage"] != "done":
