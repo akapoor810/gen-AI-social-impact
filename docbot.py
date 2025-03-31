@@ -182,12 +182,12 @@ def main():
         session_dict[user] = {
             "session_id": f"{user}-session",
             "onboarding_stage": "condition",
-            "condition": "",
-            "age": 0,
-            "weight": 0,
-            "medications": [""],
-            "emergency_contact": "",
-            "news_pref": ""
+            "condition": "diabetes", # ""
+            "age": 21,  # 0
+            "weight": 150,  # 0
+            "medications": ["insulin", "metformin", "sulfonylureas"], # [""]
+            "emergency_email": "anika.kapoor810@gmail.com",    # ""
+            "news_pref": "insulin news" # ""
         }
         save_sessions(session_dict)  # Save immediately after creating new session
         print(session_dict[user]["condition"])
