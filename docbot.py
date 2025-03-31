@@ -200,10 +200,6 @@ def main():
     else:
         # schedule.every().day.at("09:00").do(llm_daily)
         response = llm_daily(message, user, session_dict)
-
-        while True:
-            schedule.run_pending()
-            time.sleep(60)  # Wait a minute before checking again
     
     # Save session data at the end of the request
     save_sessions(session_dict)
