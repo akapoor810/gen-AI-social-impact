@@ -191,7 +191,7 @@ def main():
         }
         save_sessions(session_dict)  # Save immediately after creating new session
         print(session_dict[user]["condition"])
-        rag_upload(session_dict[user]["condition"])
+        rag_upload(session_dict[user]["condition"], user, session_dict)
 
     if session_dict[user]["onboarding_stage"] != "done":
         response = {"text": "Calling first_interaction()" }
