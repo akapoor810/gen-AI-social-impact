@@ -1,1 +1,1 @@
-web: gunicorn -b :$PORT remi:app
+web: gunicorn -b :$PORT docbot-daily:app
