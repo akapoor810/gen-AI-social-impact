@@ -116,7 +116,7 @@ def llm_daily(message, user, session_dict):
 
         query=message,
         temperature=0.7,
-        lastk=0,
+        lastk=5,
         session_id=sid,
         rag_usage=True,
         rag_threshold='0.3',
