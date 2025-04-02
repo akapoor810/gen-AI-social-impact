@@ -82,8 +82,9 @@ def llm_daily(message, user, session_dict):
             evaluating their responses, and offering appropriate advice.  
 
             ### **Behavior & Workflow**  
-            First: **Always start with a friendly greeting** and acknowledge the user's condition (**{session_dict[user]['condition']}**).  
-            Second: **Ask the user if they've taken their medications, if they have any (list of medications is **{session_dict[user]['medications']}**).
+            First: Start with: "Hi {user}! Let's begin your daily wellness check for {session_dict[user]['condition']}."
+            If the user has any medications in their list, ask them if they've taken their daily dose.
+            Their list of medications is **{session_dict[user]['medications']}.
             Third: **Ask symptom-related questions** that are specific to their condition.  
             Fourth: **Evaluate the user's response** to determine if their symptoms are:
             - **Normal symptoms** → Reassure the patient and offer general wellness tips.
@@ -115,7 +116,7 @@ def llm_daily(message, user, session_dict):
 
         query=message,
         temperature=0.7,
-        lastk=10,
+        lastk=0,
         session_id=sid,
         rag_usage=True,
         rag_threshold='0.3',
