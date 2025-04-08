@@ -65,6 +65,151 @@ def rag_upload(condition, user, session_dict):
 
 
 
+### --- ONBOARDING FUNCTION --- ###
+def first_interaction(message, user, session_dict):
+    print("MY MES" + message)
+    questions = {
+        "condition": "🏪 What condition do you have? (Type II Diabetes, Crohn’s disease, or both)",
+        "age": "👋 Hi, I'm DocBot — your health assistant!\n"
+                "I'll help you track symptoms, remind you about meds 💊, and send you health tips 📰.\n\n"
+                "Let’s start with a few quick questions.\n 🎂 How old are you?",
+        "weight": "⚖️ What's your weight (in kg)?",
+        "medications": "💊 What medications are you currently taking? [medication 1, medication 2, etc]",
+        "emergency_contact": "📱 Who should we contact in case of emergency? [email]",
+        "news_pref": "📰 What kind of weekly health updates would you like?\nOptions: Instagram Reel 📱, TikTok 🎵, or Research News 🧪"
+    }
+
+    stage = session_dict[user].get("onboarding_stage", "condition")
+
+    if stage == "condition":
+        session_dict[user]["condition"] = message
+        session_dict[user]["onboarding_stage"] = "age"
+        return {"text": questions["age"]}
+
+    elif stage == "age":
+        if not message.isdigit():
+            return {"text": "❗ Please enter a valid age (a number)."}
+        session_dict[user]["age"] = int(message)
+        session_dict[user]["onboarding_stage"] = "weight"
+        return {"text": questions["weight"]}
+
+    elif stage == "weight":
+        cleaned = message.lower().replace("kg", "").strip()
+
+        if not cleaned.replace('.', '', 1).isdigit():
+            return {"text": "❗ Please enter a valid weight (a number in kg)."}
+        
+        session_dict[user]["weight"] = cleaned
+        session_dict[user]["onboarding_stage"] = "medications"
+        return {"text": questions["medications"]}
+
+    elif stage == "medications":
+        session_dict[user]["medications"] = [med.strip() for med in message.split(",")]
+        session_dict[user]["onboarding_stage"] = "emergency_contact"
+        return {"text": questions["emergency_contact"]}
+
+    elif stage == "emergency_contact":
+        session_dict[user]["emergency_contact"] = message
+        session_dict[user]["onboarding_stage"] = "news_pref"
+
+        buttons = [
+            {
+                "type": "button",
+                "text": "🎥 YouTube",
+                "msg": "YouTube",
+                "msg_in_chat_window": True,
+                "msg_processing_type": "sendMessage",
+                "button_id": "youtube_button"
+            },
+            {
+                "type": "button",
+                "text": "📸 IG Reel",
+                "msg": "Instagram Reel",
+                "msg_in_chat_window": True,
+                "msg_processing_type": "sendMessage",
+                "button_id": "insta_button"
+            },
+            {
+                "type": "button",
+                "text": "🎵 TikTok",
+                "msg": "TikTok",
+                "msg_in_chat_window": True,
+                "msg_processing_type": "sendMessage",
+                "button_id": "tiktok_button"
+            },
+            {
+                "type": "button",
+                "text": "🧪 Research",
+                "msg": "Research News",
+                "msg_in_chat_window": True,
+                "msg_processing_type": "sendMessage",
+                "button_id": "research_button"
+            }
+        ]
+
+        return {
+            "text": "📰 What kind of weekly health updates would you like?",
+            "attachments": [
+                {
+                    "collapsed": False,
+                    "color": "#e3e3e3",
+                    "actions": buttons
+                }
+            ]
+        }
+
+    elif stage == "news_pref":
+        valid_options = ["YouTube", "Instagram Reel", "TikTok", "Research News"]
+
+        if message not in valid_options:
+            return {"text": "Please click one of the buttons above to continue."}
+
+        session_dict[user]["news_pref"] = [message]
+        session_dict[user]["onboarding_stage"] = "condition1"
+
+
+        buttons = [
+            {
+                "type": "button",
+                "text": "Crohn's",
+                "msg": "Crohn's",
+                "msg_in_chat_window": True,
+                "msg_processing_type": "sendMessage",
+                "button_id": "choose_condition_crohns"
+            },
+            {
+                "type": "button",
+                "text": "Type II Diabetes",
+                "msg": "Type II Diabetes",
+                "msg_in_chat_window": True,
+                "msg_processing_type": "sendMessage",
+                "button_id": "choose_condition_diabetes"
+            }
+        ]
+        return {
+            "text": "🏪 What condition do you have?",
+            "attachments": [
+                {
+                    "collapsed": False,
+                    "color": "#e3e3e3",
+                    "actions": buttons
+                }
+            ]
+        }
+    
+    elif stage == "condition1":
+        print(message)
+        valid_conditions = ["Crohn's", "Type II Diabetes"]
+
+        if message not in valid_conditions:
+                    return {"text": "Please click one of the buttons above to continue."}
+
+        session_dict[user]["condition"] = message
+        session_dict[user]["onboarding_stage"] = "done"
+
+        return llm_daily(message, user, session_dict)
+    
+
 
 ### --- DAILY INTERACTION FUNCTION --- ###
 def llm_daily(message, user, session_dict):
@@ -305,7 +450,7 @@ def main():
 
 
     if session_dict[user]["onboarding_stage"] != "done":
-        response = first_interaction(message, user)
+        response = first_interaction(message, user, session_dict)
     else:
         # schedule.every().day.at("09:00").do(llm_daily)
         response = llm_daily(message, user, session_dict)
@@ -318,153 +463,3 @@ def main():
 ### --- RUN THE FLASK APP --- ###
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5001)
-
-
-
-# Load sessions when the app starts
-global session_dict
-session_dict = load_sessions()
-
-### --- ONBOARDING FUNCTION --- ###
-def first_interaction(message, user):
-    print("MY MES" + message)
-    questions = {
-        "condition": "🏪 What condition do you have? (Type II Diabetes, Crohn’s disease, or both)",
-        "age": "👋 Hi, I'm DocBot — your health assistant!\n"
-                "I'll help you track symptoms, remind you about meds 💊, and send you health tips 📰.\n\n"
-                "Let’s start with a few quick questions.\n 🎂 How old are you?",
-        "weight": "⚖️ What's your weight (in kg)?",
-        "medications": "💊 What medications are you currently taking? [medication 1, medication 2, etc]",
-        "emergency_contact": "📱 Who should we contact in case of emergency? [email]",
-        "news_pref": "📰 What kind of weekly health updates would you like?\nOptions: Instagram Reel 📱, TikTok 🎵, or Research News 🧪"
-    }
-
-    stage = session_dict[user].get("onboarding_stage", "condition")
-
-    if stage == "condition":
-        session_dict[user]["condition"] = message
-        session_dict[user]["onboarding_stage"] = "age"
-        return {"text": questions["age"]}
-
-    elif stage == "age":
-        if not message.isdigit():
-            return {"text": "❗ Please enter a valid age (a number)."}
-        session_dict[user]["age"] = int(message)
-        session_dict[user]["onboarding_stage"] = "weight"
-        return {"text": questions["weight"]}
-
-    elif stage == "weight":
-        cleaned = message.lower().replace("kg", "").strip()
-
-        if not cleaned.replace('.', '', 1).isdigit():
-            return {"text": "❗ Please enter a valid weight (a number in kg)."}
-        
-        session_dict[user]["weight"] = cleaned
-        session_dict[user]["onboarding_stage"] = "medications"
-        return {"text": questions["medications"]}
-
-    elif stage == "medications":
-        session_dict[user]["medications"] = [med.strip() for med in message.split(",")]
-        session_dict[user]["onboarding_stage"] = "emergency_contact"
-        return {"text": questions["emergency_contact"]}
-
-    elif stage == "emergency_contact":
-        session_dict[user]["emergency_contact"] = message
-        session_dict[user]["onboarding_stage"] = "news_pref"
-
-        buttons = [
-            {
-                "type": "button",
-                "text": "🎥 YouTube",
-                "msg": "YouTube",
-                "msg_in_chat_window": True,
-                "msg_processing_type": "sendMessage",
-                "button_id": "youtube_button"
-            },
-            {
-                "type": "button",
-                "text": "📸 IG Reel",
-                "msg": "Instagram Reel",
-                "msg_in_chat_window": True,
-                "msg_processing_type": "sendMessage",
-                "button_id": "insta_button"
-            },
-            {
-                "type": "button",
-                "text": "🎵 TikTok",
-                "msg": "TikTok",
-                "msg_in_chat_window": True,
-                "msg_processing_type": "sendMessage",
-                "button_id": "tiktok_button"
-            },
-            {
-                "type": "button",
-                "text": "🧪 Research",
-                "msg": "Research News",
-                "msg_in_chat_window": True,
-                "msg_processing_type": "sendMessage",
-                "button_id": "research_button"
-            }
-        ]
-
-        return {
-            "text": "📰 What kind of weekly health updates would you like?",
-            "attachments": [
-                {
-                    "collapsed": False,
-                    "color": "#e3e3e3",
-                    "actions": buttons
-                }
-            ]
-        }
-
-    elif stage == "news_pref":
-        valid_options = ["YouTube", "Instagram Reel", "TikTok", "Research News"]
-
-        if message not in valid_options:
-            return {"text": "Please click one of the buttons above to continue."}
-
-        session_dict[user]["news_pref"] = [message]
-        session_dict[user]["onboarding_stage"] = "condition1"
-
-
-        buttons = [
-            {
-                "type": "button",
-                "text": "Crohn's",
-                "msg": "Crohn's",
-                "msg_in_chat_window": True,
-                "msg_processing_type": "sendMessage",
-                "button_id": "choose_condition_crohns"
-            },
-            {
-                "type": "button",
-                "text": "Type II Diabetes",
-                "msg": "Type II Diabetes",
-                "msg_in_chat_window": True,
-                "msg_processing_type": "sendMessage",
-                "button_id": "choose_condition_diabetes"
-            }
-        ]
-        return {
-            "text": "🏪 What condition do you have?",
-            "attachments": [
-                {
-                    "collapsed": False,
-                    "color": "#e3e3e3",
-                    "actions": buttons
-                }
-            ]
-        }
-    
-    elif stage == "condition1":
-        print(message)
-        valid_conditions = ["Crohn's", "Type II Diabetes"]
-
-        if message not in valid_conditions:
-                    return {"text": "Please click one of the buttons above to continue."}
-
-        session_dict[user]["condition"] = message
-        session_dict[user]["onboarding_stage"] = "done"
-
-        return llm_daily(message, user, session_dict)
