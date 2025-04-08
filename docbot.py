@@ -72,7 +72,7 @@ def first_interaction(message, user, session_dict):
         "condition": "🏪 What condition do you have? (Type II Diabetes, Crohn’s disease, or both)",
         "age": "👋 Hi, I'm DocBot — your health assistant!\n"
                 "I'll help you track symptoms, remind you about meds 💊, and send you health tips 📰.\n\n"
-                "Let’s start with a few quick questions.\n 🎂 How old are you?",
+                "Let's start with a few quick questions.\n 🎂 How old are you?",
         "weight": "⚖️ What's your weight (in kg)?",
         "medications": "💊 What medications are you currently taking? [medication 1, medication 2, etc]",
         "emergency_contact": "📱 Who should we contact in case of emergency? [email]",
@@ -228,9 +228,8 @@ def llm_daily(message, user, session_dict):
             Your goal is to **assess the patient's well-being** by asking relevant questions based on their condition, 
             evaluating their responses, and offering appropriate advice.  
 
-            ### **Behavior & Workflow**  
-            Step 1: Start with: "Hi {user}! Let's begin your daily wellness check for {session_dict[user]['condition']}.
-            First off, have you taken your daily doses of {session_dict[user]['medications']}?"
+            Step 1: Start with: "Hi {user} 👋! Let's begin your daily wellness check for {session_dict[user]['condition']} 📋.
+            First off, have you taken your daily doses of {session_dict[user]['medications']} 💊?"
             If the user confirms they have taken their medications, move to Step 2.
             Else, remind them to take their medications.
             Step 2: **Ask 2-3 symptom-related questions** that are specific to their condition. Ask one question at a time, acknowleding and responding to the user's response before posing the next question. Do not ask all the questions at once.
@@ -446,7 +445,7 @@ def main():
         save_sessions(session_dict)  # Save immediately after creating new session
         print(session_dict[user]["condition"])
         rag_upload(session_dict[user]["condition"], user, session_dict)
-        return jsonify({"text": "🔄 Restarted onboarding. " + first_interaction("", user, session_dict)["text"]})
+        return jsonify({"text": "🔄 Restarted onboarding."})
 
 
     if session_dict[user]["onboarding_stage"] != "done":
