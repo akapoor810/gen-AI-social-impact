@@ -434,8 +434,8 @@ def main():
         print("new user", user)
         session_dict[user] = {
             "session_id": f"{user}-session",
-            "onboarding_stage": "done", # "condition",
-            "condition": "diabetes", # ""
+            "onboarding_stage": "condition",
+            "condition": "",
             "age": 0,
             "weight": 0,
             "medications": [],
