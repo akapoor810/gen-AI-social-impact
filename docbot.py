@@ -276,8 +276,8 @@ def llm_daily(message, user, session_dict):
     # TODO: Determine k value. Determine how to pass advice response to QA agent
     # play around with RAG threshold
     response_text = response.get("response", "⚠️ Sorry, I couldn't process that. Could you rephrase?").strip() if isinstance(response, dict) else response.strip()
-    advice = ""
-    next_question = ""
+    advice = [extract only advice part (starts from "docbot's advice: " and goes until "question")]
+    next_question = [extract only question part ]
     
     print(response_text)
     print(advice)
