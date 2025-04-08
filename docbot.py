@@ -220,6 +220,9 @@ def llm_daily(message, user, session_dict):
     """
     sid = session_dict[user]["session_id"]
 
+    advice = ""
+    next_question = ""
+
     response = generate(
         model="4o-mini",
         system=f"""
@@ -232,7 +235,7 @@ def llm_daily(message, user, session_dict):
             First off, have you taken your daily doses of {session_dict[user]['medications']} 💊?"
             If the user confirms they have taken their medications, move to Step 2.
             Else, remind them to take their medications.
-            Step 2: **Ask 2-3 symptom-related questions** that are specific to their condition. Ask one question at a time, acknowleding and responding to the user's response before posing the next question. Do not ask all the questions at once.
+            Step 2: **Ask 2-3 symptom-related questions** that are specific to their condition. Start every question with "Question #[what number question you're on]". Ask one question at a time, acknowleding and responding to the user's response before posing the next question. Do not ask all the questions at once.
             Step 3: After every question, **evaluate the user's response**.
             - If their symptoms are normal, reassure them and offer general wellness tips.
             - If their symptoms are abnormal, express concern and provide advice to alleviate discomfort based on your knowledge of their condition.  
@@ -273,7 +276,12 @@ def llm_daily(message, user, session_dict):
     # TODO: Determine k value. Determine how to pass advice response to QA agent
     # play around with RAG threshold
     response_text = response.get("response", "⚠️ Sorry, I couldn't process that. Could you rephrase?").strip() if isinstance(response, dict) else response.strip()
+    advice = ""
+    next_question = ""
+    
     print(response_text)
+    print(advice)
+    print(next_question)
     
 
     if "docbot's advice" in response_text.lower():
@@ -377,12 +385,7 @@ def qa_agent(message, agent_response, user, session_dict):
     response_text = response.get("response", "⚠️ Sorry, I couldn't process that. Could you rephrase?").strip() if isinstance(response, dict) else response.strip()
     print(f"qa agent said: {response_text}")
 
-    # Create the response object with the basic text
-    response_obj = {
-        "text": response_text
-    }
-
-    return response_obj
+    return response_text
 
 
 # def run_scheduler():
