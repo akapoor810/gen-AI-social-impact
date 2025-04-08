@@ -276,8 +276,16 @@ def llm_daily(message, user, session_dict):
     # TODO: Determine k value. Determine how to pass advice response to QA agent
     # play around with RAG threshold
     response_text = response.get("response", "⚠️ Sorry, I couldn't process that. Could you rephrase?").strip() if isinstance(response, dict) else response.strip()
-    advice = [extract only advice part (starts from "docbot's advice: " and goes until "question")]
-    next_question = [extract only question part ]
+    
+    # Extract advice (everything from 'DocBot's Advice:' to just before the next 'Question')
+    advice_match = re.search(r"DocBot's Advice:(.*?)(?=Question #\d|$)", response_text, re.DOTALL | re.IGNORECASE)
+
+    # Extract the next question (starting with 'Question #')
+    question_match = re.search(r"(Question #\d.*)", response_text, re.DOTALL)
+
+    advice = advice_match.group(1).strip() if advice_match else "⚠️ Unable to extract advice."
+    next_question = question_match.group(1).strip() if question_match else "⚠️ No next question found."
+
     
     print(response_text)
     print(advice)
@@ -287,7 +295,7 @@ def llm_daily(message, user, session_dict):
     if "docbot's advice" in response_text.lower():
         qa_response = qa_agent(message, response_text, user, session_dict)
 
-        if "accepted" in qa_response.lower():
+        if "approved" in qa_response.lower():
             pass    
         elif "needs revision" in qa_response.lower():
             match = re.search(r"Suggested revision:\s*(.*)", qa_response)
