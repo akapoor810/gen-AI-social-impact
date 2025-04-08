@@ -301,7 +301,12 @@ def llm_daily(message, user, session_dict):
             match = re.search(r"Suggested revision:\s*(.*)", qa_response)
             if match:
                 advice = match.group(1).strip()
-                response_text = advice + "\n" + next_question
+                if "END" in response_text:
+                    response_text = advice + " END"
+                
+                else:
+                    response_text = advice + "\n" + next_question
+
             else:
                 print("No revised message found.")
         elif "rejected" in qa_response.lower():
