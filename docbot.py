@@ -445,14 +445,16 @@ def main():
         save_sessions(session_dict)  # Save immediately after creating new session
         print(session_dict[user]["condition"])
         rag_upload(session_dict[user]["condition"], user, session_dict)
-        response = "🔄 Restarted onboarding.\n"
+        print("🔄 Restarted onboarding.")
 
 
     if session_dict[user]["onboarding_stage"] != "done":
-        response += first_interaction(message, user, session_dict)
+        response = first_interaction(message, user, session_dict)
     else:
         # schedule.every().day.at("09:00").do(llm_daily)
         response = llm_daily(message, user, session_dict)
+
+
     
     # Save session data at the end of the request
     save_sessions(session_dict)
