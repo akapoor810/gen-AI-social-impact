@@ -288,19 +288,21 @@ def llm_daily(message, user, session_dict):
 
     
     print(response_text)
-    print(advice)
-    print(next_question)
+    print("extracted advice" + advice)
+    print("extracted Question" + next_question)
     
 
     if "docbot's advice" in response_text.lower():
-        qa_response = qa_agent(message, response_text, user, session_dict)
+        qa_response = qa_agent(message, advice, user, session_dict)
 
         if "approved" in qa_response.lower():
+            print("in approved")
             pass    
         elif "needs revision" in qa_response.lower():
             match = re.search(r"Suggested revision:\s*(.*)", qa_response)
             if match:
-                response_text = match.group(1).strip()
+                advice = match.group(1).strip()
+                response_text = advice + "\n" + next_question
             else:
                 print("No revised message found.")
         elif "rejected" in qa_response.lower():
@@ -350,13 +352,13 @@ def qa_agent(message, agent_response, user, session_dict):
 
                 ### Guidelines:
                 - If the advice is **safe, appropriate, and helpful**, respond with:
-                `"✅ Approved. The message is safe, relevant, and well-phrased."`
+                `"Approved. The message is safe, relevant, and well-phrased."`
 
                 - If the advice has **minor issues**, suggest a revision:
-                `"⚠️ Needs revision: [brief explanation]. Suggested revision: [revised message]"`
+                `"Needs revision: [brief explanation]. Suggested revision: [revised message]"`
 
                 - If the advice contains **major issues**, flag it:
-                `"❌ Rejected: [brief explanation of the safety concern or misinformation]"`
+                `"Rejected: [brief explanation of the safety concern or misinformation]"`
 
                 ---
 
