@@ -446,7 +446,7 @@ def main():
         save_sessions(session_dict)  # Save immediately after creating new session
         print(session_dict[user]["condition"])
         rag_upload(session_dict[user]["condition"], user, session_dict)
-        return jsonify({"text": "🔄 Restarted onboarding. " + first_interaction("", user)["text"]})
+        return jsonify({"text": "🔄 Restarted onboarding. " + first_interaction("", user, session_dict)["text"]})
 
 
     if session_dict[user]["onboarding_stage"] != "done":
