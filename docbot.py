@@ -64,6 +64,26 @@ def rag_upload(condition, user, session_dict):
         strategy = 'smart')
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ### --- DAILY INTERACTION FUNCTION --- ###
 def llm_daily(message, user, session_dict):
     """Handles routine wellness check: 
@@ -227,6 +247,16 @@ def qa_agent(message, agent_response, user, session_dict):
         rag_threshold='0.7',
         rag_k=10
     )
+
+    response_text = response.get("response", "⚠️ Sorry, I couldn't process that. Could you rephrase?").strip() if isinstance(response, dict) else response.strip()
+    print(f"qa agent said: {response_text}")
+
+    # Create the response object with the basic text
+    response_obj = {
+        "text": response_text
+    }
+
+    return response_obj
 
 
 # def run_scheduler():
