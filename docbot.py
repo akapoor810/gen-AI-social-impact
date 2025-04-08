@@ -311,9 +311,9 @@ def llm_daily(message, user, session_dict):
                 print("No revised message found.")
         elif "rejected" in qa_response.lower():
             response_text = f"I'm not sure how to evaluate those systems. 🙁 Would you like me to contact your emergency contact at {session_dict[user]['emergency_email']}?"
-    
-    if "END" in response_text:
+            # TODO: Add the "email doctor" button
 
+    if "END" in response_text:
         buttons = [
             {
                 "type": "button",
