@@ -504,8 +504,6 @@ def llm_daily(message, user, session_dict):
                 }
             ]
         }
-    
-        
         
 
     # Create the response object with the basic text
@@ -658,16 +656,18 @@ def email_doc(query, user, session_dict):
         lastk=5,
         session_id=sid,
         rag_usage = False)
-    
+
+    response_text = response.get("response", "⚠️ Sorry, I couldn't process that. Could you rephrase?").strip() if isinstance(response, dict) else response.strip()
+
 
     response_obj = {
-        "text": response
+        "text": response_text
     }
     
     # if "Yes_confirm" in query:
         
 
-    if "Please confirm " in response:
+    if "Please confirm " in response_text:
         buttons = [
             {
                 "type": "button",
@@ -688,7 +688,7 @@ def email_doc(query, user, session_dict):
         ]
         
         response_obj = {
-            "text": response,
+            "text": response_text,
             "attachments": [
                 {
     
@@ -699,7 +699,7 @@ def email_doc(query, user, session_dict):
             ]
         }
 
-    print("response" + response)
+    print("response" + response_text)
     print(f"object: {response_obj["text"]}")
     return response_obj
     
