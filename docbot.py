@@ -620,6 +620,7 @@ def qa_agent(message, agent_response, user, session_dict):
 # scheduler_thread.start()
 
 def email_doc(query, user, session_dict):
+    print("IN EMAIL DOC")
     sid = session_dict[user]["session_id"]
 
     system = f"""
@@ -639,6 +640,7 @@ def email_doc(query, user, session_dict):
     Name: send_email
     Parameters: dst, subject, content
     example usage: send_email('xyz@gmail.com', 'greetings', 'hi, I hope you are well'). 
+    You are already given the dst parameter. It is {session_dict[user]["emergency_email"]}.
     Once you have all the parameters to send an email, respond with "Please confirm if you're ready to send the email to {session_dict[user]["emergency_email"]}. 
     If {query} is "Yes_confirm" begin your response with 
     "send_email(dst, subject, content)" with the parameters filled in 
@@ -648,13 +650,19 @@ def email_doc(query, user, session_dict):
     if not query:
         return jsonify({"status": "ignored"})
 
-    response = generate(model = '4o-mini',
+    response = generate(
+        model = '4o-mini',
         system = system,
         query = query,
         temperature=0.7,
         lastk=5,
         session_id=sid,
         rag_usage = False)
+    
+
+    response_obj = {
+        "text": response
+    }
     
     # if "Yes_confirm" in query:
         
@@ -679,10 +687,11 @@ def email_doc(query, user, session_dict):
             }
         ]
         
-        return {
+        response_obj = {
             "text": response,
             "attachments": [
                 {
+    
                     "collapsed": False,
                     "color": "#e3e3e3",
                     "actions": buttons
@@ -690,11 +699,8 @@ def email_doc(query, user, session_dict):
             ]
         }
 
-    try:
-        return response['response']
-    except Exception as e:
-        print(f"Error occured with parsing output: {response}")
-        raise e
+
+    return response_obj
     
 
 ### --- FLASK ROUTE TO HANDLE USER REQUESTS --- ###
