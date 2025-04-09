@@ -7,6 +7,10 @@ import json
 from flask import Flask, request, jsonify, Response
 from llmproxy import *
 import re
+from duckduckgo_search import DDGS 
+from bs4 import BeautifulSoup
+import requests
+import random
 
 app = Flask(__name__)
 
@@ -36,6 +40,165 @@ def save_sessions(session_dict):
         json.dump(session_dict, file, indent=4)
     print("Session data saved.")
 
+
+#WEEKLY TOOL FUNCTIONS
+def websearch(query):
+    with DDGS() as ddgs:
+        results = ddgs.text(query, max_results=5)
+    return [r["href"] for r in results]
+
+def get_page(url):
+    headers = {"User-Agent": "Mozilla/5.0"}
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        soup = BeautifulSoup(response.text, "html.parser")
+        # Remove non-content tags for a cleaner text
+        for tag in soup(["script", "style", "header", "footer", "nav", "aside"]):
+            tag.extract()
+        text = soup.get_text(separator=" ", strip=True)
+        return " ".join(text.split())[:1500]
+    return f"Failed to fetch {url}, status code: {response.status_code}"
+
+def youtube_search(query):
+    with DDGS() as ddgs:
+        results = ddgs.text(f"{query} site:youtube.com", max_results=5)
+    return [r["href"] for r in results if "youtube.com/watch" in r["href"]]
+
+def tiktok_search(query):
+    with DDGS() as ddgs:
+        results = ddgs.text(f"{query} site:tiktok.com", max_results=5)
+    return [r["href"] for r in results if "tiktok.com" in r["href"]]
+
+def instagram_search(query):
+    hashtag = query.replace(" ", "")
+    with DDGS() as ddgs:
+        results = ddgs.text(f"#{hashtag} site:instagram.com", max_results=5)
+    return [r["href"] for r in results if "instagram.com" in r["href"]]
+
+# --- TOOL PARSER ---
+def extract_tool(text):
+    for tool in ["websearch", "get_page", "youtube_search", "tiktok_search", "instagram_search"]:
+        match = re.search(fr'{tool}\([^)]*\)', text)
+        if match:
+            return match.group()
+    return None
+
+# --- WEEKLY UPDATE FUNCTION ---
+def agent_weekly_update(user_info, health_info):
+    """
+    Create a system message using the user and health info, then call the LLM agent.
+    The agent returns a tool call (e.g., youtube_search("gut health smoothies")).
+    """
+    system = f"""
+You are an AI agent designed to handle weekly health content updates for users with specific health conditions.
+
+In addition to your own intelligence, you are given access to a set of tools that let you fetch personalized health content from various online platforms.
+
+Your job is to use the right tool to deliver a helpful and engaging content recommendation **based on the user's health condition and preferences**.
+
+Think step-by-step about which platform is best for this week's update, and then return the correct tool call using the examples provided.
+
+ONLY respond with a tool call like: youtube_search("gut health smoothies")
+
+### USER INFORMATION ###
+- Name: {user_info.get('name')}
+- Health condition: {health_info.get('condition')}
+- Preferred platform: {user_info.get('news_pref')}
+- Preferred news sources: {", ".join(user_info.get('news_sources', []))}
+
+### PROVIDED TOOLS INFORMATION ###
+
+##1. Tool to perform a YouTube video search
+Name: youtube_search
+Parameters: query
+Example usage: youtube_search("crohn's anti-inflammatory meals")
+
+##2. Tool to search TikTok for short-form video content
+Name: tiktok_search
+Parameters: query
+Example usage: tiktok_search("what I eat with IBS")
+
+##3. Tool to search Instagram posts/reels via hashtags
+Name: instagram_search
+Parameters: query
+Example usage: instagram_search("gut healing routine")
+
+##4. Tool to perform a websearch using DuckDuckGo
+Name: websearch
+Parameters: query
+Example usage: websearch("best probiotics for gut health site:bbc.com")
+Example usage: websearch("latest Crohn's breakthroughs site:nytimes.com")
+
+ONLY respond with one tool call. Do NOT explain or add any extra text.
+Make your query specific, relevant to the condition, and useful.
+
+Each time you search, make sure the search query is different from the previous week's content.
+"""
+    response = generate(
+        model='4o-mini',
+        system=system,
+        query="What should I send this user this week?",
+        temperature=0.9,
+        lastk=30,
+        session_id='HEALTH_UPDATE_AGENT',
+        rag_usage=False
+    )
+    print(f"🔍 Raw agent response: {response}")
+    return response['response']
+
+# --- WEEKLY UPDATE INTERNAL HELPER ---
+def weekly_update_internal(user):
+    """
+    Generate the weekly update for a given user.
+    Returns a dictionary with the update results including a "text" key for display.
+    """
+    if user not in session_dict:
+        return {"text": "User not found in session."}
+    
+    user_session = session_dict[user]
+    user_info = {
+        "name": user,
+        "news_sources": user_session.get("news_sources", ["bbc.com", "nytimes.com"]),
+        "news_pref": user_session.get("news_pref", "Research News")
+    }
+    health_info = {
+        "condition": user_session.get("condition", "unknown condition")
+    }
+    
+    try:
+        agent_response = agent_weekly_update(user_info, health_info)
+        print(f"✅ Final agent response: {agent_response}")
+
+        tool_call = extract_tool(agent_response)
+
+        if not tool_call:
+            print("⚠️ No valid tool call found. Using fallback.")
+            condition = health_info.get("condition")
+            pref = user_info.get("news_pref", "Research News").lower()
+            tool_map = {
+                'youtube': f'youtube_search("{condition} tips")',
+                'tiktok': f'tiktok_search("{condition} tips")',
+                'instagram reel': f'instagram_search("{condition} tips")',
+                'research news': f'websearch("{condition} tips")'
+            }
+            key = pref if pref in tool_map else "research news"
+            tool_call = tool_map.get(key)
+
+        print(f"🔁 Final tool to execute: {tool_call}")
+        results = eval(tool_call)
+        output = "\n".join(f"• {item}" for item in results)
+        text_response = f"Here is your weekly health content digest\n{tool_call}:\n{output}"
+        return {
+            "text": text_response,
+            "agent_response": agent_response,
+            "executed_tool": tool_call,
+            "results": output
+        }
+    except Exception as e:
+        import traceback
+        print("❌ Exception during weekly update:")
+        traceback.print_exc()
+        return {"text": f"Error: {str(e)}"}
 
 
 ### --- RAG UPLOAD FUNCTION --- ###
@@ -301,7 +464,7 @@ def llm_daily(message, user, session_dict):
             if match:
                 advice = match.group(1).strip()
                 if "next_question" != "END":
-                    response_text = advice + "\n" + next_question
+                    response_text = "DocBot's Advice: " + advice + "\n" + next_question
                 
                 else:
                     response_text = advice
@@ -456,49 +619,82 @@ def qa_agent(message, agent_response, user, session_dict):
 # scheduler_thread = threading.Thread(target=run_scheduler, daemon=True)
 # scheduler_thread.start()
 
-# def email_doc(query, user, session_dict):
-#     sid = session_dict[user]["session_dict"]
+def email_doc(query, user, session_dict):
+    sid = session_dict[user]["session_dict"]
 
-#     system = f"""
-#     You are an AI agent designed to handle user requests.
-#     In addition to your own intelligence, you are given access to a set of tools.
+    system = f"""
+    You are an AI agent designed to handle user requests.
+    In addition to your own intelligence, you are given access to a set of tools.
 
-#     Think step-by-step, breaking down the task into a sequence small steps.
+    Think step-by-step, breaking down the task into a sequence small steps.
 
-#     If you can't resolve the query based on your intelligence, ask the user to execute a tool on your behalf and share the results with you.
-#     If you want the user to execute a tool on your behalf, strictly only respond with the tool's name and parameters.
+    If you can't resolve the query based on your intelligence, ask the user to execute a tool on your behalf and share the results with you.
+    If you want the user to execute a tool on your behalf, strictly only respond with the tool's name and parameters.
 
-#     The name of the provided tools and their parameters are given below.
-#     The output of tool execution will be shared with you so you can decide your next steps.
+    The name of the provided tools and their parameters are given below.
+    The output of tool execution will be shared with you so you can decide your next steps.
 
-#     ### PROVIDED TOOLS INFORMATION ###
-#     ##1. Tool to send an email
-#     Name: send_email
-#     Parameters: dst, subject, content
-#     example usage: send_email('xyz@gmail.com', 'greetings', 'hi, I hope you are well'). 
-#     Once you have all the parameters to send an email, ask the user to confirm 
-#     they want to send the email {include a button here to confirm}. 
-#     If {confirm button = yes} begin your response with 
-#     "send_email(dst, subject, content)" with the parameters filled in 
-#     appropriately.
+    ### PROVIDED TOOLS INFORMATION ###
+    ##1. Tool to send an email
+    Name: send_email
+    Parameters: dst, subject, content
+    example usage: send_email('xyz@gmail.com', 'greetings', 'hi, I hope you are well'). 
+    Once you have all the parameters to send an email, respond with "Please confirm if you're ready to send the email to {session_dict[user]["emergency_email"]}. 
+    If {query} is "Yes_confirm" begin your response with 
+    "send_email(dst, subject, content)" with the parameters filled in 
+    appropriately.
 
-#     """
-#     if not query:
-#         return jsonify({"status": "ignored"})
+    """
+    if not query:
+        return jsonify({"status": "ignored"})
 
-#     response = generate(model = '4o-mini',
-#         system = system,
-#         query = query,
-#         temperature=0.7,
-#         lastk=5,
-#         session_id=sid,
-#         rag_usage = False)
+    response = generate(model = '4o-mini',
+        system = system,
+        query = query,
+        temperature=0.7,
+        lastk=5,
+        session_id=sid,
+        rag_usage = False)
+    
+    # if "Yes_confirm" in query:
+        
 
-#     try:
-#         return response['response']
-#     except Exception as e:
-#         print(f"Error occured with parsing output: {response}")
-#         raise e
+    if "Please confirm " in response:
+        buttons = [
+            {
+                "type": "button",
+                "text": "Sent it! ✅",
+                "msg": "Yes_confirm",
+                "msg_in_chat_window": True,
+                "msg_processing_type": "sendMessage",
+                "button_id": "choose_yes"
+            },
+            {
+                "type": "button",
+                "text": "Don't send... ❌",
+                "msg": "No_confirm",
+                "msg_in_chat_window": True,
+                "msg_processing_type": "sendMessage",
+                "button_id": "choose_no"
+            }
+        ]
+        
+        return {
+            "text": response,
+            "attachments": [
+                {
+                    "collapsed": False,
+                    "color": "#e3e3e3",
+                    "actions": buttons
+                }
+            ]
+        }
+
+    try:
+        return response['response']
+    except Exception as e:
+        print(f"Error occured with parsing output: {response}")
+        raise e
     
 
 ### --- FLASK ROUTE TO HANDLE USER REQUESTS --- ###
@@ -536,9 +732,31 @@ def main():
 
     if session_dict[user]["onboarding_stage"] != "done":
         response = first_interaction(message, user, session_dict)
+    
+    elif message == "Yes_email" or message == "Yes_confirm":
+            response = email_doc(message, user, session_dict)
+
+    elif (message == "No_email") or message == "No_confirm":
+        response = {"text": "Alright! That concludes your daily wellness check 😊. Talk to you tomorrow!"}
+    
+
+
     else:
         # schedule.every().day.at("09:00").do(llm_daily)
         response = llm_daily(message, user, session_dict)
+
+    if message.lower() == "weekly update":
+        if session_dict[user].get("onboarding_stage") == "done":
+            update_response = weekly_update_internal(user)
+            return jsonify(update_response)
+        else:
+            return jsonify({"text": "Please complete onboarding before requesting a weekly update."})
+
+    # Use the onboarding flow if not finished
+    if session_dict[user]["onboarding_stage"] != "done":
+        response = first_interaction(message, user)
+    else:
+        response = {"text": "You're fully onboarded. Type 'weekly update' to get your update."}
 
 
     
