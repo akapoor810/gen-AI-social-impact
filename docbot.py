@@ -739,24 +739,19 @@ def main():
     elif (message == "No_email") or message == "No_confirm":
         response = {"text": "Alright! That concludes your daily wellness check 😊. Talk to you tomorrow!"}
     
-
-
-    else:
-        # schedule.every().day.at("09:00").do(llm_daily)
-        response = llm_daily(message, user, session_dict)
-
-    if message.lower() == "weekly update":
+    elif message.lower() == "weekly update":
         if session_dict[user].get("onboarding_stage") == "done":
             update_response = weekly_update_internal(user)
             return jsonify(update_response)
         else:
             return jsonify({"text": "Please complete onboarding before requesting a weekly update."})
 
-    # Use the onboarding flow if not finished
-    if session_dict[user]["onboarding_stage"] != "done":
-        response = first_interaction(message, user)
     else:
-        response = {"text": "You're fully onboarded. Type 'weekly update' to get your update."}
+        # schedule.every().day.at("09:00").do(llm_daily)
+        response = llm_daily(message, user, session_dict)
+
+
+  
 
 
     
