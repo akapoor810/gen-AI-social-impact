@@ -433,8 +433,7 @@ def llm_daily(message, user, session_dict):
         rag_threshold='0.5',
         rag_k=5
     )
-    # TODO: Determine k value. Determine how to pass advice response to QA agent
-    # play around with RAG threshold
+    # TODO: Determine k value. play around with RAG threshold
     response_text = response.get("response", "⚠️ Sorry, I couldn't process that. Could you rephrase?").strip() if isinstance(response, dict) else response.strip()
 
     advice = ""
@@ -495,7 +494,7 @@ def llm_daily(message, user, session_dict):
             }
         ]
         return {
-            "text": response_text + "👩‍⚕️ Do you want to contact your Doctor?",
+            "text": response_text + "\n" + "👩‍⚕️ Do you want to contact your Doctor?",
             "attachments": [
                 {
                     "collapsed": False,
@@ -532,7 +531,7 @@ def qa_agent(message, agent_response, user, session_dict):
             1. **Ensure Medical Safety**
             - Verify that the advice does not suggest a diagnosis or prescribe treatment.
             - Confirm that the response encourages users to consult a healthcare provider for serious or unclear symptoms.
-            - Check for misinformation, unsupported claims, or dangerous suggestions based on your knowledge of the condition.
+            - Flag any misinformation, unsupported claims, or dangerous suggestions based on your knowledge of the condition.
 
             2. **Check Relevance and Completeness**
             - Ensure the advice is relevant to the user's condition and symptoms.
@@ -639,11 +638,9 @@ def email_doc(query, user, session_dict):
     Parameters: dst, subject, content
     example usage: send_email('xyz@gmail.com', 'greetings', 'hi, I hope you are well'). 
     You are already given the dst parameter. It is {session_dict[user]["emergency_email"]}.
+    Once you obtain the subject parameter, respond with: "Subject of email: [subject]"
+    Once you obtain the content parameter, respond with: "Content of email: [content of email]"
     Once you have all the parameters to send an email, respond with "Please confirm if you're ready to send the email to {session_dict[user]["emergency_email"]}. 
-    If {query} is "Yes_confirm" begin your response with 
-    "send_email(dst, subject, content)" with the parameters filled in 
-    appropriately.
-
     """
     if not query:
         return jsonify({"status": "ignored"})
@@ -659,14 +656,26 @@ def email_doc(query, user, session_dict):
 
     response_text = response.get("response", "⚠️ Sorry, I couldn't process that. Could you rephrase?").strip() if isinstance(response, dict) else response.strip()
 
+    subject = content = ""
+
+    if "Subject of email:" in response_text:
+        match = re.search(r"Subject of email[:*\s]*(\S.*)", response_text)  # Capture actual text after "*Subject of email:*"
+        if match:
+            subject = match.group(1).strip()  # Remove extra spaces
+    if "Content of email:" in response_text:
+        match = re.search(r"Content of email[:*\s]*(\S.*)", response_text)  # Capture actual text after "*Content of email:*"
+        if match:
+            content = match.group(1).strip()  # Remove extra spaces
+    
+    
+    if "Yes_confirm" in query:
+        response_text = f"send_email({session_dict[user]["emergency_email"]}, {subject}, {content})"
+        
 
     response_obj = {
         "text": response_text
     }
     
-    # if "Yes_confirm" in query:
-        
-
     if "Please confirm " in response_text:
         buttons = [
             {
