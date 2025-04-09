@@ -240,7 +240,6 @@ def llm_daily(message, user, session_dict):
             - If their symptoms are abnormal, express concern and provide advice to alleviate discomfort based on your knowledge of their condition.  
             - Begin every response with your advice with "DocBot's Advice: "
             - If the symptoms are **severe**, gently ask the user if they would like to contact their **emergency contact** (**{session_dict[user]['emergency_email']}**).  
-            Step 4: After you have asked all of your questions, respond with "END"
             
 
             ### **Response Guidelines**  
@@ -283,7 +282,7 @@ def llm_daily(message, user, session_dict):
     # Extract the next question (starting with 'Question #')
     question_match = re.search(r"(Question #\d.*)", response_text, re.DOTALL)
     advice = advice_match.group(1).strip() if advice_match else "⚠️ Unable to extract advice."
-    next_question = question_match.group(1).strip() if question_match else "⚠️ No next question found."
+    next_question = question_match.group(1).strip() if question_match else "END"
 
     
     print(response_text)
@@ -301,19 +300,19 @@ def llm_daily(message, user, session_dict):
             match = re.search(r"Suggested revision:\s*(.*)", qa_response)
             if match:
                 advice = match.group(1).strip()
-                if "END" in response_text:
-                    response_text = advice + " END"
+                if "next_question" != "END":
+                    response_text = advice + "\n" + next_question
                 
                 else:
-                    response_text = advice + "\n" + next_question
-
+                    response_text = advice
             else:
                 print("No revised message found.")
+
         elif "rejected" in qa_response.lower():
             response_text = f"I'm not sure how to evaluate those systems. 🙁 Would you like me to contact your emergency contact at {session_dict[user]['emergency_email']}?"
             # TODO: Add the "email doctor" button
 
-    if "END" in response_text:
+    if next_question == "END":
         buttons = [
             {
                 "type": "button",
@@ -333,7 +332,7 @@ def llm_daily(message, user, session_dict):
             }
         ]
         return {
-            "text": "👩‍⚕️ Do you want to contact your Doctor?",
+            "text": response_text + "👩‍⚕️ Do you want to contact your Doctor?",
             "attachments": [
                 {
                     "collapsed": False,
@@ -410,7 +409,7 @@ def qa_agent(message, agent_response, user, session_dict):
             Rejected: Suggesting insulin without knowing blood sugar levels could be dangerous. Low blood sugar should not be treated with insulin.  
 
             Suggested revision:  
-            _"Dizziness and confusion can be signs of low blood sugar. If you suspect this, try eating something with sugar, like juice or candy. If you don't feel better soon, seek medical help immediately."_
+            "Dizziness and confusion can be signs of low blood sugar. If you suspect this, try eating something with sugar, like juice or candy. If you don't feel better soon, seek medical help immediately."
         """,
 
         query=f"User Condition: {session_dict[user]['condition']}. User Message: {message}. Primary Agent Response: {agent_response}",
