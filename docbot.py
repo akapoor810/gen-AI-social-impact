@@ -147,7 +147,7 @@ Each time you search, make sure the search query is different from the previous 
     return response['response']
 
 # --- WEEKLY UPDATE INTERNAL HELPER ---
-def weekly_update_internal(user):
+def weekly_update_internal(user, session_dict):
     """
     Generate the weekly update for a given user.
     Returns a dictionary with the update results including a "text" key for display.
@@ -620,7 +620,7 @@ def qa_agent(message, agent_response, user, session_dict):
 # scheduler_thread.start()
 
 def email_doc(query, user, session_dict):
-    sid = session_dict[user]["session_dict"]
+    sid = session_dict[user]["session_id"]
 
     system = f"""
     You are an AI agent designed to handle user requests.
@@ -741,7 +741,7 @@ def main():
     
     elif message.lower() == "weekly update":
         if session_dict[user].get("onboarding_stage") == "done":
-            update_response = weekly_update_internal(user)
+            update_response = weekly_update_internal(user, session_dict)
             return jsonify(update_response)
         else:
             return jsonify({"text": "Please complete onboarding before requesting a weekly update."})
@@ -749,9 +749,6 @@ def main():
     else:
         # schedule.every().day.at("09:00").do(llm_daily)
         response = llm_daily(message, user, session_dict)
-
-
-  
 
 
     
