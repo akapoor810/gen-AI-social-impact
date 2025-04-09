@@ -382,9 +382,6 @@ def llm_daily(message, user, session_dict):
     """
     sid = session_dict[user]["session_id"]
 
-    advice = ""
-    next_question = ""
-
     response = generate(
         model="4o-mini",
         system=f"""
@@ -439,7 +436,10 @@ def llm_daily(message, user, session_dict):
     # TODO: Determine k value. Determine how to pass advice response to QA agent
     # play around with RAG threshold
     response_text = response.get("response", "⚠️ Sorry, I couldn't process that. Could you rephrase?").strip() if isinstance(response, dict) else response.strip()
-    
+
+    advice = ""
+    next_question = ""
+
     # Extract advice (everything from 'DocBot's Advice:' to just before the next 'Question')
     advice_match = re.search(r"DocBot's Advice:(.*?)(?=Question #\d|$)", response_text, re.DOTALL | re.IGNORECASE)
     # Extract the next question (starting with 'Question #')
@@ -465,8 +465,7 @@ def llm_daily(message, user, session_dict):
             if match:
                 advice = match.group(1).strip()
                 if "next_question" != "END":
-                    response_text = "DocBot's Advice: " + advice + "\n" + next_question
-                
+                    response_text = "DocBot's Advice: " + advice + "\n\n" + next_question
                 else:
                     response_text = advice
             else:
@@ -700,7 +699,8 @@ def email_doc(query, user, session_dict):
             ]
         }
 
-
+    print("response" + response)
+    print(f"object: {response_obj["text"]}")
     return response_obj
     
 
@@ -741,7 +741,7 @@ def main():
         response = first_interaction(message, user, session_dict)
     
     elif message == "Yes_email" or message == "Yes_confirm":
-            response = email_doc(message, user, session_dict)
+        response = email_doc(message, user, session_dict)
 
     elif (message == "No_email") or message == "No_confirm":
         response = {"text": "Alright! That concludes your daily wellness check 😊. Talk to you tomorrow!"}
