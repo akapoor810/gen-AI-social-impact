@@ -667,7 +667,7 @@ def email_doc(query, user, session_dict):
         if match:
             content = match.group(1).strip()  # Remove extra spaces
     
-    
+
     if "Yes_confirm" in query:
         response_text = f"send_email({session_dict[user]["emergency_email"]}, {subject}, {content})"
         
@@ -750,7 +750,8 @@ def main():
         response = first_interaction(message, user, session_dict)
     
     elif message == "Yes_email" or message == "Yes_confirm":
-        response = email_doc(message, user, session_dict)
+        while message != "No_confirm":
+            response = email_doc(message, user, session_dict)
 
     elif (message == "No_email") or message == "No_confirm":
         response = {"text": "Alright! That concludes your daily wellness check 😊. Talk to you tomorrow!"}
