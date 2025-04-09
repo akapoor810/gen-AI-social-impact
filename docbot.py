@@ -444,8 +444,9 @@ def llm_daily(message, user, session_dict):
     advice_match = re.search(r"DocBot's Advice:(.*?)(?=Question #\d|$)", response_text, re.DOTALL | re.IGNORECASE)
     # Extract the next question (starting with 'Question #')
     question_match = re.search(r"(Question #\d.*)", response_text, re.DOTALL)
-    advice = advice_match.group(1).strip() if advice_match else "⚠️ Unable to extract advice."
-    next_question = question_match.group(1).strip() if question_match else "END"
+    advice = advice_match.group(1).strip() if advice_match else "Unable to extract advice."
+    if advice != "Unable to extract advice.":
+        next_question = question_match.group(1).strip() if question_match else "END"
 
     
     print(response_text)
