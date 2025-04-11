@@ -403,7 +403,7 @@ def first_interaction(message, user, session_dict):
         valid_conditions = ["Crohn's", "Type II Diabetes"]
 
         if message not in valid_conditions:
-                    return {"text": "Please click one of the buttons above to continue."}
+            return {"text": "Please click one of the buttons above to continue."}
 
         session_dict[user]["condition"] = message
         session_dict[user]["onboarding_stage"] = "done"
@@ -433,14 +433,14 @@ def llm_daily(message, user, session_dict):
             First off, have you taken your daily doses of {session_dict[user]['medications']} 💊?"
             If the user confirms they have taken their medications, move to Step 2.
             Else, remind them to take their medications.
-            Step 2: **Ask 2-3 symptom-related questions** that are specific to their condition. Start every question with "Question #[what number question you're on]". Ask one question at a time, acknowleding and responding to the user's response before posing the next question. Do not ask all the questions at once.
+            Step 2: **Ask 3 symptom-related questions** that are specific to their condition. Start every question with "Question #[what number question you're on]". Ask one question at a time, acknowleding and responding to the user's response before posing the next question. Do not ask all the questions at once.
             Step 3: After every question, **evaluate the user's response**.
             - If their symptoms are normal, reassure them and offer general wellness tips.
             - If their symptoms are abnormal, express concern and provide advice to alleviate discomfort based on your knowledge of their condition.  
-            - Begin every response with your advice with "DocBot's Advice: "
+            - Begin every response with your advice with "👩‍⚕️ DocBot's Advice: "
             - If the symptoms are **severe**, gently ask the user if they would like to contact their **emergency contact** (**{session_dict[user]['emergency_email']}**).  
             - Address any follow-up questions the user might have before moving on to the question.
-            Step 4: After you have concluded all of your questions and answered any follow-up questions from the user, ask, "Would you like to contact your doctor about anything we've discussed, or other symptoms?"
+            Step 4: After you have concluded asking all 3 questions and answered any follow-up questions from the user, ask, "Would you like to contact your doctor about anything we've discussed, or other symptoms?"
 
             ### **Response Guidelines**  
             - Only respond to queries related to the user's condition and current symptoms. If the user gets off track
@@ -794,12 +794,10 @@ def main():
         print("🔄 Restarted onboarding.")
 
 
-    if session_dict[user]["onboarding_stage"] != "done":
-        response = first_interaction(message, user, session_dict)
-    
-    elif message == "Yes_email" or session_dict[user]["onboarding_stage"] == "email":
+    if message == "Yes_email" or session_dict[user]["onboarding_stage"] == "email":
         session_dict[user]["onboarding_stage"] = "email"
         save_sessions(session_dict)
+        print("going to email doc")
         response = email_doc(message, user, session_dict)
 
     elif (message == "No_email") or message == "No_confirm":
@@ -811,6 +809,9 @@ def main():
             return jsonify(update_response)
         else:
             return jsonify({"text": "Please complete onboarding before requesting a weekly update."})
+
+    elif session_dict[user]["onboarding_stage"] != "done":
+        response = first_interaction(message, user, session_dict)
 
     else:
         # schedule.every().day.at("09:00").do(llm_daily)
