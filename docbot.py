@@ -606,7 +606,6 @@ def llm_daily(message, user, session_dict):
         session_dict[user]['email_subject'] = ""
         session_dict[user]['email_content'] = ""
         session_dict[user].get("onboarding_stage") == "done"
-        save_sessions(session_dict)
 
     response_obj = {
         "text": response_text
@@ -857,12 +856,9 @@ def main():
         print("🔄 Restarted onboarding.")
 
 
-    # if message == "Yes_email" or session_dict[user]["onboarding_stage"] == "email":
-    #     session_dict[user]["onboarding_stage"] = "email"
-    #     save_sessions(session_dict)
-    #     print("going to email doc")
-    #     response = email_doc(message, user, session_dict)
-
+    if session_dict[user]["onboarding_stage"] != "done":
+        response = first_interaction(message, user, session_dict)
+        
     elif (message == "No_email") or message == "No_confirm":
         response = {"text": "Alright! That concludes your daily wellness check 😊. Talk to you tomorrow!"}
     
@@ -872,9 +868,6 @@ def main():
             return jsonify(update_response)
         else:
             return jsonify({"text": "Please complete onboarding before requesting a weekly update."})
-
-    elif session_dict[user]["onboarding_stage"] != "done":
-        response = first_interaction(message, user, session_dict)
 
     else:
         # schedule.every().day.at("09:00").do(llm_daily)
