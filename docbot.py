@@ -312,6 +312,7 @@ def first_interaction(message, user, session_dict):
 
     elif stage == "emergency_contact":
         session_dict[user]["emergency_contact"] = message
+        save_sessions(session_dict)
         session_dict[user]["onboarding_stage"] = "news_pref"
 
         buttons = [
@@ -407,6 +408,7 @@ def first_interaction(message, user, session_dict):
 
         session_dict[user]["condition"] = message
         session_dict[user]["onboarding_stage"] = "done"
+        save_sessions(session_dict)
 
         return llm_daily(message, user, session_dict)
     
@@ -433,7 +435,7 @@ def llm_daily(message, user, session_dict):
             First off, have you taken your daily doses of {session_dict[user]['medications']} 💊?"
             If the user confirms they have taken their medications, move to Step 2.
             Else, remind them to take their medications.
-            Step 2: **Ask 3 symptom-related questions** that are specific to their condition. Start every question with "Question #[what number question you're on]". Ask one question at a time, acknowleding and responding to the user's response before posing the next question. Do not ask all the questions at once.
+            Step 2: Ask 3 symptom-related questions that are specific to their condition. Start every question with "Question #[what number question you're on]". Ask one question at a time, acknowleding and responding to the user's response before posing the next question. Do not ask all the questions at once.
             Step 3: After every question, **evaluate the user's response**.
             - If their symptoms are normal, reassure them and offer general wellness tips.
             - If their symptoms are abnormal, express concern and provide advice to alleviate discomfort based on your knowledge of their condition.  
@@ -682,6 +684,7 @@ def email_doc(query, user, session_dict):
     You are already given the dst parameter. It is {session_dict[user]["emergency_email"]}.
     Once you obtain the subject parameter, respond with: "Subject of email: [subject]"
     Once you obtain the content parameter, respond with: "Content of email: [content of email]"
+    After the user has provided all the parameters, respond with: "Subject of email: [subject]\nContent of email: [content of email]"
     Once you have all the parameters to send an email, respond with "Please confirm if you're ready to send the email to {session_dict[user]["emergency_email"]}. 
     """
     if not query:
