@@ -486,16 +486,16 @@ def llm_daily(message, user, session_dict):
     next_question = ""
 
     # Extract advice (everything from 'DocBot's Advice:' to just before the next 'Question')
-    advice_match = re.search(r"DocBot's Advice:(.*?)(?=Question #\d|$)", response_text, re.DOTALL | re.IGNORECASE)
-    # Extract the next question (starting with 'Question #')
-    question_match = re.search(r"(Question #\d.*)", response_text, re.DOTALL)
+    advice_match = re.search(r"DocBot's Advice:(.*?)(?=Question \d|$)", response_text, re.DOTALL | re.IGNORECASE)
+    # Extract the next question (starting with 'Question ')
+    question_match = re.search(r"(Question \d.*)", response_text, re.DOTALL)
     advice = advice_match.group(1).strip() if advice_match else "Unable to extract advice."
     if advice != "Unable to extract advice.":
         next_question = question_match.group(1).strip() if question_match else ""
 
     print(response_text)
     print("extracted advice" + advice)
-    print("extracted Question" + next_question)
+    print("extracted question" + next_question)
     
 
     if "docbot's advice" in response_text.lower():
@@ -555,13 +555,11 @@ def llm_daily(message, user, session_dict):
         if match:
             subject = match.group(1).strip()  # Remove extra spaces
             session_dict[user]['email_subject'] = subject
-            save_sessions(session_dict)
     if "Content of email:" in response_text:
-        match = re.search(r"Content of email[:*\s]*(\S.*)", response_text)  # Capture actual text after "*Content of email:*"
+        match = re.search(r"Content of email:(.*?)(?=Please confirm if you're ready\d|$)", response_text, re.DOTALL | re.IGNORECASE)
         if match:
             content = match.group(1).strip()  # Remove extra spaces
             session_dict[user]['email_content'] = content
-            save_sessions(session_dict)
     
 
     if "Please confirm " in response_text:
@@ -599,7 +597,8 @@ def llm_daily(message, user, session_dict):
     if "Yes_confirm" in message:
         subject = session_dict[user]['email_subject']
         content = session_dict[user]['email_content']
-        eval(f"send_email({session_dict[user]["emergency_email"]}, {subject}, {content})")
+        print(subject, content)
+        send_email(session_dict[user]["emergency_email"], subject, content)
 
         response_text = f"Email successfully sent to your doctor at {session_dict[user]["emergency_email"]}!"
         
@@ -858,7 +857,7 @@ def main():
 
     if session_dict[user]["onboarding_stage"] != "done":
         response = first_interaction(message, user, session_dict)
-        
+
     elif (message == "No_email") or message == "No_confirm":
         response = {"text": "Alright! That concludes your daily wellness check 😊. Talk to you tomorrow!"}
     
