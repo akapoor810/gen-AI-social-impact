@@ -447,7 +447,6 @@ def llm_daily(message, user, session_dict):
     if advice != "Unable to extract advice.":
         next_question = question_match.group(1).strip() if question_match else "END"
 
-    
     print(response_text)
     print("extracted advice" + advice)
     print("extracted Question" + next_question)
@@ -749,9 +748,10 @@ def main():
     if session_dict[user]["onboarding_stage"] != "done":
         response = first_interaction(message, user, session_dict)
     
-    elif message == "Yes_email" or message == "Yes_confirm":
-        while message != "No_confirm":
-            response = email_doc(message, user, session_dict)
+    elif message == "Yes_email" or session_dict[user]["onboarding_stage"] == "email":
+        session_dict[user]["onboarding_stage"] = "email"
+        save_sessions(session_dict)
+        response = email_doc(message, user, session_dict)
 
     elif (message == "No_email") or message == "No_confirm":
         response = {"text": "Alright! That concludes your daily wellness check 😊. Talk to you tomorrow!"}
