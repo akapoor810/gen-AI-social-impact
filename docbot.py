@@ -81,7 +81,46 @@ def extract_tool(text):
         match = re.search(fr'{tool}\([^)]*\)', text)
         if match:
             return match.group()
-    return None
+    
+    return
+
+
+# --- SEND EMAIL FUNCTION ---
+def send_email(dst, subject, content):
+
+    import os, smtplib
+    from email.mime.text import MIMEText
+    from email.mime.multipart import MIMEMultipart
+    import json
+ 
+    # Email configuration
+    smtp_server = "smtp-tls.eecs.tufts.edu"  # e.g., mail.yourdomain.com
+    smtp_port = 587  # Usually 587 for TLS, 465 for SSL
+    sender_email = "akapoo02@eecs.tufts.edu"
+    receiver_email = dst
+    password = "anikacs@tufts810"
+
+    # Create the email message
+    msg = MIMEMultipart()
+    msg["From"] = sender_email
+    msg["To"] = receiver_email
+    msg["Subject"] = subject
+
+    body = content
+    msg.attach(MIMEText(body, "plain"))
+
+    # Send email
+    try:
+        server = smtplib.SMTP(smtp_server, smtp_port)
+        server.starttls()  # Secure the connection (use only if the server supports TLS)
+        server.login(sender_email, password)
+        server.sendmail(sender_email, receiver_email, msg.as_string())
+        server.quit()
+        return "Email sent successfully!"
+    except Exception as e:
+        print("there was an error")
+        return f"Error: {e}" 
+
 
 # --- WEEKLY UPDATE FUNCTION ---
 def agent_weekly_update(user_info, health_info):
@@ -400,7 +439,8 @@ def llm_daily(message, user, session_dict):
             - If their symptoms are abnormal, express concern and provide advice to alleviate discomfort based on your knowledge of their condition.  
             - Begin every response with your advice with "DocBot's Advice: "
             - If the symptoms are **severe**, gently ask the user if they would like to contact their **emergency contact** (**{session_dict[user]['emergency_email']}**).  
-            
+            - Address any follow-up questions the user might have before moving on to the question.
+            Step 4: After you have concluded all of your questions and answered any follow-up questions from the user, ask, "Would you like to contact your doctor about anything we've discussed, or other symptoms?"
 
             ### **Response Guidelines**  
             - Only respond to queries related to the user's condition and current symptoms. If the user gets off track
@@ -445,7 +485,7 @@ def llm_daily(message, user, session_dict):
     question_match = re.search(r"(Question #\d.*)", response_text, re.DOTALL)
     advice = advice_match.group(1).strip() if advice_match else "Unable to extract advice."
     if advice != "Unable to extract advice.":
-        next_question = question_match.group(1).strip() if question_match else "END"
+        next_question = question_match.group(1).strip() if question_match else ""
 
     print(response_text)
     print("extracted advice" + advice)
@@ -473,7 +513,7 @@ def llm_daily(message, user, session_dict):
             response_text = f"I'm not sure how to evaluate those systems. 🙁 Would you like me to contact your emergency contact at {session_dict[user]['emergency_email']}?"
             # TODO: Add the "email doctor" button
 
-    if next_question == "END":
+    if "would you like to contact your doctor" in response_text.lower():
         buttons = [
             {
                 "type": "button",
@@ -584,8 +624,9 @@ def qa_agent(message, agent_response, user, session_dict):
     print(f"qa agent said: {response_text}")
 
     return response_text
-
-
+    
+    
+    
 # def run_scheduler():
 #     """
 #     Runs an infinite loop to check and execute scheduled jobs.
@@ -614,6 +655,8 @@ def qa_agent(message, agent_response, user, session_dict):
 # # Start the scheduler in a separate background thread
 # scheduler_thread = threading.Thread(target=run_scheduler, daemon=True)
 # scheduler_thread.start()
+
+
 
 def email_doc(query, user, session_dict):
     print("IN EMAIL DOC")
@@ -668,7 +711,11 @@ def email_doc(query, user, session_dict):
     
 
     if "Yes_confirm" in query:
-        response_text = f"send_email({session_dict[user]["emergency_email"]}, {subject}, {content})"
+        eval(f"send_email({session_dict[user]["emergency_email"]}, {subject}, {content})")
+
+        response_text = f"Email successfully sent to your doctor at {session_dict[user]["emergency_email"]}!"
+        session_dict[user].get("onboarding_stage") == "done"
+        save_sessions(session_dict)
         
 
     response_obj = {
@@ -711,6 +758,8 @@ def email_doc(query, user, session_dict):
     print(f"object: {response_obj["text"]}")
     return response_obj
     
+
+
 
 ### --- FLASK ROUTE TO HANDLE USER REQUESTS --- ###
 # """Handles user messages and manages session storage."""
@@ -766,7 +815,6 @@ def main():
     else:
         # schedule.every().day.at("09:00").do(llm_daily)
         response = llm_daily(message, user, session_dict)
-
 
     
     # Save session data at the end of the request
