@@ -181,7 +181,7 @@ Each time you search, make sure the search query is different from the previous 
         system=system,
         query="What should I send this user this week?",
         temperature=0.9,
-        lastk=30,
+        lastk=0,
         session_id='HEALTH_UPDATE_AGENT',
         rag_usage=False
     )
@@ -471,7 +471,7 @@ def llm_daily(message, user, session_dict):
 
         query=message,
         temperature=0.7,
-        lastk=5,
+        lastk=0,
         session_id=sid,
         rag_usage=True,
         rag_threshold='0.5',
@@ -554,7 +554,7 @@ def llm_daily(message, user, session_dict):
             subject = match.group(1).strip()  # Remove extra spaces
             session_dict[user]['email_subject'] = subject
     if "Content of email:" in response_text:
-        match = re.search(r"Content of email:(.*?)(?=Please confirm if you're ready\d|$)", response_text, re.DOTALL | re.IGNORECASE)
+        match = re.search(r"Content of email:(.*?)(?=Please confirm\d|$)", response_text, re.DOTALL | re.IGNORECASE)
         if match:
             content = match.group(1).strip()  # Remove extra spaces
             session_dict[user]['email_content'] = content
@@ -595,10 +595,10 @@ def llm_daily(message, user, session_dict):
     if "Yes_confirm" in message:
         subject = session_dict[user]['email_subject']
         content = session_dict[user]['email_content']
-        print(subject, content)
+        print("about to send email:", subject, content)
         send_email(session_dict[user]["emergency_email"], subject, content)
 
-        response_text = f"Email successfully sent to your doctor at {session_dict[user]["emergency_email"]}!"
+        response_text = f"📧 Email successfully sent to your doctor at {session_dict[user]["emergency_email"]}!\n\nIf there's anything else you need, don't hesitate to ask! 😊"
         
         session_dict[user]['email_subject'] = ""
         session_dict[user]['email_content'] = ""
@@ -671,7 +671,7 @@ def qa_agent(message, agent_response, user, session_dict):
 
         query=f"User Condition: {session_dict[user]['condition']}. User Message: {message}. Primary Agent Response: {agent_response}",
         temperature=0.3,
-        lastk=5,
+        lastk=0,
         session_id=sid,
         rag_usage=True,
         rag_threshold='0.7',
@@ -714,109 +714,6 @@ def qa_agent(message, agent_response, user, session_dict):
 # scheduler_thread = threading.Thread(target=run_scheduler, daemon=True)
 # scheduler_thread.start()
 
-
-
-def email_doc(query, user, session_dict):
-    print("IN EMAIL DOC")
-    sid = session_dict[user]["session_id"]
-
-    system = f"""
-    You are an AI agent designed to handle user requests.
-    In addition to your own intelligence, you are given access to a set of tools.
-
-    Think step-by-step, breaking down the task into a sequence small steps.
-
-    If you can't resolve the query based on your intelligence, ask the user to execute a tool on your behalf and share the results with you.
-    If you want the user to execute a tool on your behalf, strictly only respond with the tool's name and parameters.
-
-    The name of the provided tools and their parameters are given below.
-    The output of tool execution will be shared with you so you can decide your next steps.
-
-    ### PROVIDED TOOLS INFORMATION ###
-    ##1. Tool to send an email
-    Name: send_email
-    Parameters: dst, subject, content
-    example usage: send_email('xyz@gmail.com', 'greetings', 'hi, I hope you are well'). 
-    You are already given the dst parameter. It is {session_dict[user]["emergency_email"]}.
-    Once you obtain the subject parameter, respond with: "Subject of email: [subject]"
-    The user may require assistance writing the content of the email. Once you obtain the content parameter, respond with: "Content of email: [content of email]"
-    After the user has provided all the parameters, respond with: "Subject of email: [subject]\nContent of email: [content of email]"
-    Once you have all the parameters to send an email, respond with "Please confirm if you're ready to send the email to {session_dict[user]["emergency_email"]}. 
-    """
-    if not query:
-        return jsonify({"status": "ignored"})
-
-    response = generate(
-        model = '4o-mini',
-        system = system,
-        query = query,
-        temperature=0.7,
-        lastk=5,
-        session_id=sid,
-        rag_usage = False)
-
-    response_text = response.get("response", "⚠️ Sorry, I couldn't process that. Could you rephrase?").strip() if isinstance(response, dict) else response.strip()
-
-    subject = content = ""
-
-    if "Subject of email:" in response_text:
-        match = re.search(r"Subject of email[:*\s]*(\S.*)", response_text)  # Capture actual text after "*Subject of email:*"
-        if match:
-            subject = match.group(1).strip()  # Remove extra spaces
-    if "Content of email:" in response_text:
-        match = re.search(r"Content of email[:*\s]*(\S.*)", response_text)  # Capture actual text after "*Content of email:*"
-        if match:
-            content = match.group(1).strip()  # Remove extra spaces
-    
-
-    if "Yes_confirm" in query:
-        eval(f"send_email({session_dict[user]["emergency_email"]}, {subject}, {content})")
-
-        response_text = f"Email successfully sent to your doctor at {session_dict[user]["emergency_email"]}!"
-        session_dict[user].get("onboarding_stage") == "done"
-        save_sessions(session_dict)
-        
-
-    response_obj = {
-        "text": response_text
-    }
-    
-    if "Please confirm " in response_text:
-        buttons = [
-            {
-                "type": "button",
-                "text": "Send it! ✅",
-                "msg": "Yes_confirm",
-                "msg_in_chat_window": True,
-                "msg_processing_type": "sendMessage",
-                "button_id": "choose_yes"
-            },
-            {
-                "type": "button",
-                "text": "Don't send... ❌",
-                "msg": "No_confirm",
-                "msg_in_chat_window": True,
-                "msg_processing_type": "sendMessage",
-                "button_id": "choose_no"
-            }
-        ]
-        
-        response_obj = {
-            "text": response_text,
-            "attachments": [
-                {
-    
-                    "collapsed": False,
-                    "color": "#e3e3e3",
-                    "actions": buttons
-                }
-            ]
-        }
-
-    print("response" + response_text)
-    print(f"object: {response_obj["text"]}")
-    return response_obj
-    
 
 
 
@@ -866,7 +763,7 @@ def main():
         else:
             return jsonify({"text": "Please complete onboarding before requesting a weekly update."})
 
-    else:
+    elif session_dict[user]["onboarding_stage"] != "done":
         # schedule.every().day.at("09:00").do(llm_daily)
         response = llm_daily(message, user, session_dict)
 
