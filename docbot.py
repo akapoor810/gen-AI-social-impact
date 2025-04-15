@@ -279,7 +279,7 @@ def first_interaction(message, user, session_dict):
                 "I'll help you track symptoms, remind you about meds 💊, and send you health tips 📰.\n\n"
                 "Let's start with a few quick questions.\n 🎂 How old are you?",
         "weight": "⚖️ What's your weight (in kg)?",
-        "medications": "💊 What medications are you currently taking?",
+        "medications": "💊 What medications are you currently taking? Please separate each medication with a comma!",
         "emergency_email": "📱 What is your doctor's email?",
         "news_pref": "📰 What kind of weekly health updates would you like?\nOptions: Instagram Reel 📱, TikTok 🎵, or Research News 🧪"
     }
@@ -429,6 +429,16 @@ def llm_daily(message, user, session_dict):
     """
     sid = session_dict[user]["session_id"]
     first_name = user.split('.')[0].capitalize()
+    meds = session_dict[user]["medications"]
+
+    if len(meds) == 0:
+        formatted_meds = ""
+    elif len(meds) == 1:
+        formatted_meds = meds[0]
+    elif len(meds) == 2:
+        formatted_meds = f"{meds[0]} and {meds[1]}"
+    else:
+        formatted_meds = ", ".join(meds[:-1]) + f", and {meds[-1]}"
 
     response = generate(
         model="4o-mini",
@@ -438,8 +448,7 @@ def llm_daily(message, user, session_dict):
             Your goal is to **assess the patient's well-being** by asking relevant questions based on their condition, 
             evaluating their responses, and offering appropriate advice.  
 
-            Step 1: Start with: "Hi {first_name} 👋! Let's begin your daily wellness check for {session_dict[user]['condition']} 📋
-            Ask the user if they have taken their specific medication, USE MEDICATION NAME from {session_dict[user]['medications']}"
+            Step 1: Start with: "Hi {first_name} 👋! Let's begin your daily wellness check for {session_dict[user]['condition']} 📋 First off, have you taken your daily doses of {formatted_meds}?"
             If the user confirms they have taken their medications, move to Step 2.
             Else, remind them to take their medications.
             Step 2: Ask 3 symptom-related questions that are specific to their condition. Start every question with "Question [what number question you're on])". Ask one question at a time, acknowleding and responding to the user's response before posing the next question. Do not ask all the questions at once.
