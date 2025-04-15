@@ -427,6 +427,7 @@ def llm_daily(message, user, session_dict):
         - Formulates advice and passes to QA agent before returning
         - Activates expert in the loop if it determines symptoms are abnormal.
     """
+    print("IN LLM DAILY")
     sid = session_dict[user]["session_id"]
     first_name = user.split('.')[0].capitalize()
     meds = session_dict[user]["medications"]
@@ -456,7 +457,7 @@ def llm_daily(message, user, session_dict):
             - If their symptoms are normal, reassure them and offer general wellness tips.
             - If their symptoms are abnormal, express concern and provide advice to alleviate discomfort based on your knowledge of their condition.  
             - Begin every response with your advice with "👩‍⚕️ DocBot's Advice: "
-            - If the symptoms are **severe**, gently ask the user if they would like to contact their **emergency contact** (**{session_dict[user]['emergency_email']}**).  
+            - If the symptoms are **severe**, urgent, or risky, gently ask the user if they would like to contact their **emergency contact** (**{session_dict[user]['emergency_email']}**).  
             - Address any follow-up questions the user might have before moving on to the question.
             Step 4: After you have concluded asking all 3 questions and answered any follow-up questions from the user, ask, "Would you like to contact your doctor about anything we've discussed, or other symptoms?"
             Step 5: Once the user has provided the subject and content parameters of the email, respond with: "Subject of email: [subject]\nContent of email: [content of email]\nPlease confirm if you're ready to send the email to {session_dict[user]["emergency_email"]}".
@@ -648,11 +649,13 @@ def qa_agent(message, agent_response, user, session_dict):
             - Verify that the advice does not suggest a diagnosis or prescribe treatment.
             - Confirm that the response encourages users to consult a healthcare provider for serious or unclear symptoms.
             - Flag any misinformation, unsupported claims, or dangerous suggestions based on your knowledge of the condition.
-
+            - The response should always cite where the medical advice is from. For example, “According to ADA 2024 guidelines…”.
+            
             2. **Check Relevance and Completeness**
             - Ensure the advice is relevant to the user's condition and symptoms.
             - Identify if any critical symptoms or next steps were missed.
             - Confirm the message includes compassionate guidance for users in distress.
+            - Ensure the chatbot's advice is inclusive across demographics (e.g., different age groups, pregnancy, comorbidities).
 
             3. **Evaluate Tone and Language**
             - Ensure the tone is empathetic, respectful, and calming.
@@ -665,7 +668,7 @@ def qa_agent(message, agent_response, user, session_dict):
             - If the advice has **minor issues**, suggest a revision:
             `"Needs revision: [brief explanation]. Suggested revision: [revised message]"`
 
-            - If the advice contains **major issues**, flag it:
+            - If the advice contains **major issues** and cannot be revised, flag it:
             `"Rejected: [brief explanation of the safety concern or misinformation]"`
             ---
             ### Input:
