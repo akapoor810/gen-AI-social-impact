@@ -181,7 +181,7 @@ Each time you search, make sure the search query is different from the previous 
         system=system,
         query="What should I send this user this week?",
         temperature=0.9,
-        lastk=30,
+        lastk=10,
         session_id='HEALTH_UPDATE_AGENT',
         rag_usage=False
     )
@@ -448,12 +448,16 @@ def llm_daily(message, user, session_dict):
 
         query=message,
         temperature=0.7,
-        lastk=10,
+        lastk=session_dict[user]["history"],
         session_id=sid,
         rag_usage=True,
         rag_threshold='0.5',
         rag_k=5
     )
+    # Increment history
+    session_dict[user]["history"] = session_dict[user]["history"] + 1
+    save_sessions(session_dict)
+
     # TODO: Determine k value. play around with RAG threshold
     response_text = response.get("response", "⚠️ Sorry, I couldn't process that. Could you rephrase?").strip() if isinstance(response, dict) else response.strip()
 
@@ -645,12 +649,15 @@ def qa_agent(message, agent_response, user, session_dict):
 
         query=f"User Condition: {session_dict[user]['condition']}. User Message: {message}. Primary Agent Response: {agent_response}",
         temperature=0.3,
-        lastk=5,
+        lastk=session_dict[user]["history"],
         session_id=sid,
         rag_usage=True,
         rag_threshold='0.7',
         rag_k=10
     )
+    # Increment history
+    session_dict[user]["history"] = session_dict[user]["history"] + 1
+    save_sessions(session_dict)
 
     response_text = response.get("response", "⚠️ Sorry, I couldn't process that. Could you rephrase?").strip() if isinstance(response, dict) else response.strip()
     print(f"qa agent said: {response_text}")
@@ -716,7 +723,8 @@ def main():
             "weight": 0,
             "medications": [],
             "emergency_email": "",
-            "news_pref": ""
+            "news_pref": "",
+            "history": 0
         }
         save_sessions(session_dict)  # Save immediately after creating new session
         print(session_dict[user]["condition"])
