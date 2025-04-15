@@ -432,9 +432,8 @@ def llm_daily(message, user, session_dict):
     first_name = user.split('.')[0].capitalize()
     meds = session_dict[user]["medications"]
 
-    if len(meds) == 0:
-        formatted_meds = ""
-    elif len(meds) == 1:
+    formatted_meds = ""
+    if len(meds) == 1:
         formatted_meds = meds[0]
     elif len(meds) == 2:
         formatted_meds = f"{meds[0]} and {meds[1]}"
@@ -461,7 +460,8 @@ def llm_daily(message, user, session_dict):
             - If the symptoms are **severe**, urgent, or risky, gently ask the user if they would like to contact their **emergency contact** (**{session_dict[user]['emergency_email']}**).  
             - Address any follow-up questions the user might have before moving on to the question.
             Step 4: After you have concluded asking all 3 questions and answered any follow-up questions from the user, ask, "Would you like to contact your doctor about anything we've discussed, or other symptoms?"
-            Step 5: Once the user has provided the subject and content parameters of the email, respond with: "Subject of email: [subject]\nContent of email: [content of email]\nPlease confirm if you're ready to send the email to {session_dict[user]["emergency_email"]}".
+            Step 5: After asking the user for the subject and content of their email, append the following to your message: "Examples:\n• "Generate a summary of my symptoms"\n•"Ask my doctor for specific medical advice"\n•"Express interest in scheduling a consultation/appointment""
+            Step 6: Once the user has provided the subject and content parameters of the email, respond with: "Subject of email: [subject]\nContent of email: [content of email]\nPlease confirm if you're ready to send the email to {session_dict[user]["emergency_email"]}".
 
             ### **Response Guidelines**  
             - ALWAYS USE EMOJIS 
@@ -489,11 +489,11 @@ def llm_daily(message, user, session_dict):
 
         query=message,
         temperature=0.7,
-        lastk=5,
+        lastk=10,
         session_id=sid,
-        rag_usage=False,
-        # rag_threshold='0.5',
-        # rag_k=5
+        rag_usage=True,
+        rag_threshold='0.5',
+        rag_k=5
     )
     # TODO: Determine k value. play around with RAG threshold
     response_text = response.get("response", "⚠️ Sorry, I couldn't process that. Could you rephrase?").strip() if isinstance(response, dict) else response.strip()
