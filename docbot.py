@@ -449,7 +449,7 @@ def llm_daily(message, user, session_dict):
             Your goal is to **assess the patient's well-being** by asking relevant questions based on their condition, 
             evaluating their responses, and offering appropriate advice.  
 
-            Step 1: Start with: "Hi {first_name} 👋! Let's begin your daily wellness check for {session_dict[user]['condition']} 📋 First off, have you taken your daily doses of {formatted_meds}?"
+            Step 1: NO MATTER WHAT ALWAYS Start with: "Hi {first_name} 👋! Let's begin your daily wellness check for {session_dict[user]['condition']} 📋 First off, have you taken your daily doses of {formatted_meds}?"
             If the user confirms they have taken their medications, move to Step 2.
             Else, remind them to take their medications.
             Step 2: Ask 3 symptom-related questions that are specific to their condition. Start every question with "Question [what number question you're on])". Ask one question at a time, acknowleding and responding to the user's response before posing the next question. Do not ask all the questions at once.
@@ -457,6 +457,7 @@ def llm_daily(message, user, session_dict):
             - If their symptoms are normal, reassure them and offer general wellness tips.
             - If their symptoms are abnormal, express concern and provide advice to alleviate discomfort based on your knowledge of their condition.  
             - Begin every response with your advice with "👩‍⚕️ DocBot's Advice: "
+            - DocBot's advice should not include follow-up questions in addition to the 3 symptom-related questions. Stay focused and on track.
             - If the symptoms are **severe**, urgent, or risky, gently ask the user if they would like to contact their **emergency contact** (**{session_dict[user]['emergency_email']}**).  
             - Address any follow-up questions the user might have before moving on to the question.
             Step 4: After you have concluded asking all 3 questions and answered any follow-up questions from the user, ask, "Would you like to contact your doctor about anything we've discussed, or other symptoms?"
@@ -650,6 +651,7 @@ def qa_agent(message, agent_response, user, session_dict):
             - Confirm that the response encourages users to consult a healthcare provider for serious or unclear symptoms.
             - Flag any misinformation, unsupported claims, or dangerous suggestions based on your knowledge of the condition.
             - The response should always cite where the medical advice is from. For example, “According to ADA 2024 guidelines…”.
+            - Don't ask further follow up questions in your response.
             
             2. **Check Relevance and Completeness**
             - Ensure the advice is relevant to the user's condition and symptoms.
