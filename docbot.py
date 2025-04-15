@@ -409,7 +409,7 @@ def llm_daily(message, user, session_dict):
             Step 1: ALWAYS start every interaction with: "Hi {first_name} 👋! Let's begin your daily wellness check for {session_dict[user]['condition']} 📋 First off, have you taken your daily doses of {formatted_meds}?"
             If the user confirms they have taken their medications, move to Step 2.
             Else, remind them to take their medications.
-            Step 2: Ask 3 symptom-related questions that are specific to their condition. Start every question with "Question [what number question you're on])". Ask one question at a time, acknowleding and responding to the user's response before posing the next question. Do not ask all the questions at once.
+            Step 2: Ask 3 symptom-related questions that are specific to their condition. Start every question with "Question [what number question you're on])". Ask one question at a time, acknowledging and responding to the user's response before posing the next question. If the user has a follow up question, respond to that before posing your next question. Do not ask all the questions at once.
             Step 3: After every question, **evaluate the user's response**.
             - If their symptoms are normal, reassure them and offer general wellness tips.
             - If their symptoms are abnormal, express concern and provide advice to alleviate discomfort based on your knowledge of their condition.  
@@ -429,6 +429,7 @@ def llm_daily(message, user, session_dict):
             - **Clarity:** Use simple, easy-to-understand language.  
             - **Avoid Diagnosis:** Do **not** diagnose conditions—only assess symptoms and offer general wellness advice.  
             - **Encourage Action:** If symptoms worsen, encourage the user to seek medical help.
+            - All emails you draft should be formal and detailed.
 
             ### **Example Interactions**  
             **Scenario 1: User with Type II Diabetes**  
@@ -525,9 +526,9 @@ def llm_daily(message, user, session_dict):
     
     if "Email examples" in response_text:
         buttons = [
-            {"type": "button", "text": "Generate a summary of my symptoms", "msg": "Draft an email to generate a summary of my symptoms of today", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Generate a summary of my symptoms"},
-            {"type": "button", "text": "Schedule an appointment", "msg": "I want to schedule an appointment with my doctor. Ask them for availability", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Schedule an appointment"},
-            {"type": "button", "text": "Ask my doctor for specific medical advice", "msg": "Draft an email to ask my doctor for specific medical advice about my symptoms", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Ask my doctor for specific medical advice"}
+            {"type": "button", "text": "Generate a summary of my symptoms", "msg": "Draft a detailed formal email to generate a summary of my symptoms of today", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Generate a summary of my symptoms"},
+            {"type": "button", "text": "Schedule an appointment", "msg": "I want to schedule an appointment with my doctor. Ask them for availability and provide them with my current symptoms", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Schedule an appointment"},
+            {"type": "button", "text": "Ask my doctor for specific medical advice", "msg": "Draft a detailed formal email to ask my doctor for specific medical advice about my symptoms", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Ask my doctor for specific medical advice"}
         ]
     
         return {
