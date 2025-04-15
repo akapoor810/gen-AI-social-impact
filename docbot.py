@@ -181,7 +181,7 @@ Each time you search, make sure the search query is different from the previous 
         system=system,
         query="What should I send this user this week?",
         temperature=0.9,
-        lastk=30,
+        lastk=0,
         session_id='HEALTH_UPDATE_AGENT',
         rag_usage=False
     )
@@ -488,7 +488,7 @@ def llm_daily(message, user, session_dict):
 
         query=message,
         temperature=0.7,
-        lastk=5,
+        lastk=0,
         session_id=sid,
         rag_usage=False,
         # rag_threshold='0.5',
@@ -693,7 +693,7 @@ def qa_agent(message, agent_response, user, session_dict):
 
         query=f"User Condition: {session_dict[user]['condition']}. User Message: {message}. Primary Agent Response: {agent_response}",
         temperature=0.3,
-        lastk=5,
+        lastk=0,
         session_id=sid,
         rag_usage=True,
         rag_threshold='0.7',
