@@ -289,6 +289,7 @@ def first_interaction(message, user, session_dict):
     if stage == "condition":
         session_dict[user]["condition"] = message
         session_dict[user]["onboarding_stage"] = "age"
+        save_sessions(session_dict)
         return {"text": questions["age"]}
 
     elif stage == "age":
@@ -296,6 +297,7 @@ def first_interaction(message, user, session_dict):
             return {"text": "❗ Please enter a valid age (a number)."}
         session_dict[user]["age"] = int(message)
         session_dict[user]["onboarding_stage"] = "weight"
+        save_sessions(session_dict)
         return {"text": questions["weight"]}
 
     elif stage == "weight":
@@ -306,7 +308,7 @@ def first_interaction(message, user, session_dict):
         
         session_dict[user]["weight"] = cleaned
         session_dict[user]["onboarding_stage"] = "condition1"
-
+        save_sessions(session_dict)
 
         buttons = [
             {
@@ -345,16 +347,19 @@ def first_interaction(message, user, session_dict):
 
         session_dict[user]["condition"] = message
         session_dict[user]["onboarding_stage"] = "medications"
+        save_sessions(session_dict)
         return {"text": questions["medications"]}
 
     elif stage == "medications":
         session_dict[user]["medications"] = [med.strip() for med in message.split(",")]
         session_dict[user]["onboarding_stage"] = "emergency_email"
+        save_sessions(session_dict)
         return {"text": questions["emergency_email"]}
 
     elif stage == "emergency_email":
         session_dict[user]["emergency_email"] = message
         session_dict[user]["onboarding_stage"] = "news_pref"
+        save_sessions(session_dict)
 
         buttons = [
             {
@@ -432,8 +437,8 @@ def llm_daily(message, user, session_dict):
             Your goal is to **assess the patient's well-being** by asking relevant questions based on their condition, 
             evaluating their responses, and offering appropriate advice.  
 
-            Step 1: Start with: "Hi {user} 👋! Let's begin your daily wellness check for {session_dict[user]['condition']} 📋.
-            Ask the user if they have taken their medication. See what medication they are on here: {session_dict[user]['medications']}"
+            Step 1: Start with: "Hi {first_name = user.split('.')[0].capitalize()} 👋! Let's begin your daily wellness check for {session_dict[user]['condition']} 📋
+            Ask the user if they have taken their specific medication, USE MEDICATION NAME from {session_dict[user]['medications']}"
             If the user confirms they have taken their medications, move to Step 2.
             Else, remind them to take their medications.
             Step 2: Ask 3 symptom-related questions that are specific to their condition. Start every question with "Question [what number question you're on])". Ask one question at a time, acknowleding and responding to the user's response before posing the next question. Do not ask all the questions at once.
@@ -553,11 +558,13 @@ def llm_daily(message, user, session_dict):
         if match:
             subject = match.group(1).strip()  # Remove extra spaces
             session_dict[user]['email_subject'] = subject
+            save_sessions(session_dict)
     if "Content of email:" in response_text:
         match = re.search(r"Content of email:(.*?)(?=Please confirm\d|$)", response_text, re.DOTALL | re.IGNORECASE)
         if match:
             content = match.group(1).strip()  # Remove extra spaces
             session_dict[user]['email_content'] = content
+            save_sessions(session_dict)
     
 
     if "Please confirm " in response_text:
@@ -603,6 +610,7 @@ def llm_daily(message, user, session_dict):
         session_dict[user]['email_subject'] = ""
         session_dict[user]['email_content'] = ""
         session_dict[user].get("onboarding_stage") == "done"
+        save_sessions(session_dict)
 
     response_obj = {
         "text": response_text
