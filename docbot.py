@@ -181,7 +181,7 @@ Each time you search, make sure the search query is different from the previous 
         system=system,
         query="What should I send this user this week?",
         temperature=0.9,
-        lastk=0,
+        lastk=30,
         session_id='HEALTH_UPDATE_AGENT',
         rag_usage=False
     )
@@ -488,7 +488,7 @@ def llm_daily(message, user, session_dict):
 
         query=message,
         temperature=0.7,
-        lastk=0,
+        lastk=5,
         session_id=sid,
         rag_usage=False,
         # rag_threshold='0.5',
@@ -693,7 +693,7 @@ def qa_agent(message, agent_response, user, session_dict):
 
         query=f"User Condition: {session_dict[user]['condition']}. User Message: {message}. Primary Agent Response: {agent_response}",
         temperature=0.3,
-        lastk=0,
+        lastk=5,
         session_id=sid,
         rag_usage=True,
         rag_threshold='0.7',
@@ -786,7 +786,7 @@ def main():
         else:
             return jsonify({"text": "Please complete onboarding before requesting a weekly update."})
 
-    elif message.lower() == "done":
+    elif session_dict[user]["onboarding_stage"] == "done":
         # schedule.every().day.at("09:00").do(llm_daily)
         response = llm_daily(message, user, session_dict)
 
