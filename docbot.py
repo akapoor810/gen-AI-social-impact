@@ -279,7 +279,7 @@ def first_interaction(message, user, session_dict):
                 "I'll help you track symptoms, remind you about meds 💊, and send you health tips 📰.\n\n"
                 "Let's start with a few quick questions.\n 🎂 How old are you?",
         "weight": "⚖️ What's your weight (in kg)?",
-        "medications": "💊 What medications are you currently taking? [medication 1, medication 2, etc]",
+        "medications": "💊 What medications are you currently taking?",
         "emergency_email": "📱 What is your doctor's email?",
         "news_pref": "📰 What kind of weekly health updates would you like?\nOptions: Instagram Reel 📱, TikTok 🎵, or Research News 🧪"
     }
@@ -453,6 +453,7 @@ def llm_daily(message, user, session_dict):
             Step 5: Once the user has provided the subject and content parameters of the email, respond with: "Subject of email: [subject]\nContent of email: [content of email]\nPlease confirm if you're ready to send the email to {session_dict[user]["emergency_email"]}".
 
             ### **Response Guidelines**  
+            - ALWAYS USE EMOJIS 
             - Only respond to queries related to the user's condition and current symptoms. If the user gets off track
             remind them that you are here to assess their well-being and take their current symptoms.
             - **Tone:** Maintain a warm, empathetic, and professional tone.  
@@ -773,7 +774,7 @@ def main():
         else:
             return jsonify({"text": "Please complete onboarding before requesting a weekly update."})
 
-    elif message.lower() == "daily":
+    elif message.lower() == "done":
         # schedule.every().day.at("09:00").do(llm_daily)
         response = llm_daily(message, user, session_dict)
 
