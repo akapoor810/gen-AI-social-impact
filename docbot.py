@@ -181,7 +181,7 @@ Each time you search, make sure the search query is different from the previous 
         system=system,
         query="What should I send this user this week?",
         temperature=0.9,
-        lastk=0,
+        lastk=30,
         session_id='HEALTH_UPDATE_AGENT',
         rag_usage=False
     )
@@ -433,7 +433,7 @@ def llm_daily(message, user, session_dict):
             evaluating their responses, and offering appropriate advice.  
 
             Step 1: Start with: "Hi {user} 👋! Let's begin your daily wellness check for {session_dict[user]['condition']} 📋.
-            First off, have you taken your daily doses of {session_dict[user]['medications']} 💊?"
+            Ask the user if they have taken their medication. See what medication they are on here: {session_dict[user]['medications']}"
             If the user confirms they have taken their medications, move to Step 2.
             Else, remind them to take their medications.
             Step 2: Ask 3 symptom-related questions that are specific to their condition. Start every question with "Question [what number question you're on])". Ask one question at a time, acknowleding and responding to the user's response before posing the next question. Do not ask all the questions at once.
@@ -471,11 +471,11 @@ def llm_daily(message, user, session_dict):
 
         query=message,
         temperature=0.7,
-        lastk=0,
+        lastk=5,
         session_id=sid,
-        rag_usage=True,
-        rag_threshold='0.5',
-        rag_k=5
+        rag_usage=False,
+        # rag_threshold='0.5',
+        # rag_k=5
     )
     # TODO: Determine k value. play around with RAG threshold
     response_text = response.get("response", "⚠️ Sorry, I couldn't process that. Could you rephrase?").strip() if isinstance(response, dict) else response.strip()
@@ -671,7 +671,7 @@ def qa_agent(message, agent_response, user, session_dict):
 
         query=f"User Condition: {session_dict[user]['condition']}. User Message: {message}. Primary Agent Response: {agent_response}",
         temperature=0.3,
-        lastk=0,
+        lastk=5,
         session_id=sid,
         rag_usage=True,
         rag_threshold='0.7',
@@ -750,6 +750,7 @@ def main():
         print("🔄 Restarted onboarding.")
 
 
+    response = ""
     if session_dict[user]["onboarding_stage"] != "done":
         response = first_interaction(message, user, session_dict)
 
@@ -763,7 +764,7 @@ def main():
         else:
             return jsonify({"text": "Please complete onboarding before requesting a weekly update."})
 
-    elif session_dict[user]["onboarding_stage"] != "done":
+    elif message.lower() == "daily":
         # schedule.every().day.at("09:00").do(llm_daily)
         response = llm_daily(message, user, session_dict)
 
