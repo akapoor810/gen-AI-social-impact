@@ -311,22 +311,8 @@ def first_interaction(message, user, session_dict):
         save_sessions(session_dict)
 
         buttons = [
-            {
-                "type": "button",
-                "text": "Crohn's",
-                "msg": "Crohn's",
-                "msg_in_chat_window": True,
-                "msg_processing_type": "sendMessage",
-                "button_id": "choose_condition_crohns"
-            },
-            {
-                "type": "button",
-                "text": "Type II Diabetes",
-                "msg": "Type II Diabetes",
-                "msg_in_chat_window": True,
-                "msg_processing_type": "sendMessage",
-                "button_id": "choose_condition_diabetes"
-            }
+            {"type": "button", "text": "Crohn's", "msg": "Crohn's", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "choose_condition_crohns"},
+            {"type": "button", "text": "Type II Diabetes", "msg": "Type II Diabetes", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "choose_condition_diabetes"}
         ]
         return {
             "text": "🏪 What condition do you have?",
@@ -362,38 +348,10 @@ def first_interaction(message, user, session_dict):
         save_sessions(session_dict)
 
         buttons = [
-            {
-                "type": "button",
-                "text": "🎥 YouTube",
-                "msg": "YouTube",
-                "msg_in_chat_window": True,
-                "msg_processing_type": "sendMessage",
-                "button_id": "youtube_button"
-            },
-            {
-                "type": "button",
-                "text": "📸 IG Reel",
-                "msg": "Instagram Reel",
-                "msg_in_chat_window": True,
-                "msg_processing_type": "sendMessage",
-                "button_id": "insta_button"
-            },
-            {
-                "type": "button",
-                "text": "🎵 TikTok",
-                "msg": "TikTok",
-                "msg_in_chat_window": True,
-                "msg_processing_type": "sendMessage",
-                "button_id": "tiktok_button"
-            },
-            {
-                "type": "button",
-                "text": "🧪 Research",
-                "msg": "Research News",
-                "msg_in_chat_window": True,
-                "msg_processing_type": "sendMessage",
-                "button_id": "research_button"
-            }
+            {"type": "button", "text": "🎥 YouTube", "msg": "YouTube", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "youtube_button"},
+            {"type": "button", "text": "📸 IG Reel", "msg": "Instagram Reel", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "insta_button"},
+            {"type": "button", "text": "🎵 TikTok", "msg": "TikTok", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "tiktok_button"},
+            {"type": "button", "text": "🧪 Research", "msg": "Research News", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "research_button"}
         ]
 
         return {
@@ -448,7 +406,7 @@ def llm_daily(message, user, session_dict):
             Your goal is to **assess the patient's well-being** by asking relevant questions based on their condition, 
             evaluating their responses, and offering appropriate advice.  
 
-            Step 1: NO MATTER WHAT ALWAYS Start with: "Hi {first_name} 👋! Let's begin your daily wellness check for {session_dict[user]['condition']} 📋 First off, have you taken your daily doses of {formatted_meds}?"
+            Step 1: ALWAYS start every interaction with: "Hi {first_name} 👋! Let's begin your daily wellness check for {session_dict[user]['condition']} 📋 First off, have you taken your daily doses of {formatted_meds}?"
             If the user confirms they have taken their medications, move to Step 2.
             Else, remind them to take their medications.
             Step 2: Ask 3 symptom-related questions that are specific to their condition. Start every question with "Question [what number question you're on])". Ask one question at a time, acknowleding and responding to the user's response before posing the next question. Do not ask all the questions at once.
@@ -460,7 +418,7 @@ def llm_daily(message, user, session_dict):
             - If the symptoms are **severe**, urgent, or risky, gently ask the user if they would like to contact their **emergency contact** (**{session_dict[user]['emergency_email']}**).  
             - Address any follow-up questions the user might have before moving on to the question.
             Step 4: After you have concluded asking all 3 questions and answered any follow-up questions from the user, ask, "Would you like to contact your doctor about anything we've discussed, or other symptoms?"
-            Step 5: After asking the user for the subject and content of their email, append the following to your message: "Examples:\n• "Generate a summary of my symptoms"\n•"Ask my doctor for specific medical advice"\n•"Express interest in scheduling a consultation/appointment""
+            Step 5: After asking the user for the subject and content of their email, append the following to your message: "Email examples:\n• Generate a summary of my symptoms\n•Ask my doctor for specific medical advice\n•Express interest in scheduling a consultation/appointment"
             Step 6: Once the user has provided the subject and content parameters of the email, respond with: "Subject of email: [subject]\nContent of email: [content of email]\nPlease confirm if you're ready to send the email to {session_dict[user]["emergency_email"]}".
 
             ### **Response Guidelines**  
@@ -537,22 +495,8 @@ def llm_daily(message, user, session_dict):
 
     if "would you like to contact your doctor" in response_text.lower():
         buttons = [
-            {
-                "type": "button",
-                "text": "Yes ✅",
-                "msg": "Yes_email",
-                "msg_in_chat_window": True,
-                "msg_processing_type": "sendMessage",
-                "button_id": "choose_yes"
-            },
-            {
-                "type": "button",
-                "text": "No ❌",
-                "msg": "No_email",
-                "msg_in_chat_window": True,
-                "msg_processing_type": "sendMessage",
-                "button_id": "choose_no"
-            }
+            {"type": "button", "text": "Yes ✅", "msg": "Yes_email", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "choose_yes"},
+            {"type": "button", "text": "No ❌", "msg": "No_email", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "choose_no"}
         ]
         return {
             "text": response_text + "\n" + "👩‍⚕️ Do you want to contact your Doctor?",
@@ -579,25 +523,30 @@ def llm_daily(message, user, session_dict):
             session_dict[user]['email_content'] = content
             save_sessions(session_dict)
     
+    if "Email examples" in response_text:
+        buttons = [
+            {"type": "button", "text": "Generate a summary of my symptoms", "msg": "Draft an email to generate a summary of my symptoms of today", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Generate a summary of my symptoms"},
+            {"type": "button", "text": "Schedule an appointment", "msg": "I want to schedule an appointment with my doctor. Ask them for availability", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Schedule an appointment"},
+            {"type": "button", "text": "Ask my doctor for specific medical advice", "msg": "Draft an email to ask my doctor for specific medical advice about my symptoms", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Ask my doctor for specific medical advice"}
+        ]
+    
+        return {
+            "text": response_text,
+            "attachments": [
+                {
+    
+                    "collapsed": False,
+                    "color": "#e3e3e3",
+                    "actions": buttons
+                }
+            ]
+        }
+    
 
     if "Please confirm " in response_text:
         buttons = [
-            {
-                "type": "button",
-                "text": "Send it! ✅",
-                "msg": "Yes_confirm",
-                "msg_in_chat_window": True,
-                "msg_processing_type": "sendMessage",
-                "button_id": "choose_yes"
-            },
-            {
-                "type": "button",
-                "text": "Don't send... ❌",
-                "msg": "No_confirm",
-                "msg_in_chat_window": True,
-                "msg_processing_type": "sendMessage",
-                "button_id": "choose_no"
-            }
+            {"type": "button", "text": "Send it! ✅", "msg": "Yes_confirm", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "choose_yes"},
+            {"type": "button", "text": "Don't send... ❌", "msg": "No_confirm", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "choose_no"}
         ]
     
         return {
@@ -778,6 +727,10 @@ def main():
     if session_dict[user]["onboarding_stage"] != "done":
         response = first_interaction(message, user, session_dict)
 
+    elif session_dict[user]["onboarding_stage"] == "done":
+        # schedule.every().day.at("09:00").do(llm_daily)
+        response = llm_daily(message, user, session_dict)
+
     elif (message == "No_email") or message == "No_confirm":
         response = {"text": "Alright! That concludes your daily wellness check 😊. Talk to you tomorrow!"}
     
@@ -787,10 +740,6 @@ def main():
             return jsonify(update_response)
         else:
             return jsonify({"text": "Please complete onboarding before requesting a weekly update."})
-
-    elif session_dict[user]["onboarding_stage"] == "done":
-        # schedule.every().day.at("09:00").do(llm_daily)
-        response = llm_daily(message, user, session_dict)
 
     
     # Save session data at the end of the request
