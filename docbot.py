@@ -428,6 +428,7 @@ def llm_daily(message, user, session_dict):
         - Activates expert in the loop if it determines symptoms are abnormal.
     """
     sid = session_dict[user]["session_id"]
+    first_name = user.split('.')[0].capitalize()
 
     response = generate(
         model="4o-mini",
@@ -437,7 +438,7 @@ def llm_daily(message, user, session_dict):
             Your goal is to **assess the patient's well-being** by asking relevant questions based on their condition, 
             evaluating their responses, and offering appropriate advice.  
 
-            Step 1: Start with: "Hi {first_name = user.split('.')[0].capitalize()} 👋! Let's begin your daily wellness check for {session_dict[user]['condition']} 📋
+            Step 1: Start with: "Hi {first_name} 👋! Let's begin your daily wellness check for {session_dict[user]['condition']} 📋
             Ask the user if they have taken their specific medication, USE MEDICATION NAME from {session_dict[user]['medications']}"
             If the user confirms they have taken their medications, move to Step 2.
             Else, remind them to take their medications.
@@ -610,7 +611,7 @@ def llm_daily(message, user, session_dict):
         session_dict[user]['email_subject'] = ""
         session_dict[user]['email_content'] = ""
         session_dict[user].get("onboarding_stage") == "done"
-        save_sessions(session_dict)
+        
 
     response_obj = {
         "text": response_text
