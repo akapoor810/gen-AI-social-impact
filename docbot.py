@@ -718,7 +718,7 @@ def main():
             "medications": [],
             "emergency_email": "",
             "news_pref": "",
-            "history": 0
+            "history": 1
         }
         save_sessions(session_dict)  # Save immediately after creating new session
         print(session_dict[user]["condition"])
@@ -733,6 +733,7 @@ def main():
     elif session_dict[user]["onboarding_stage"] == "done":
         # schedule.every().day.at("09:00").do(llm_daily)
         response = llm_daily(message, user, session_dict)
+        session_dict[user]["history"] += 1
 
     elif (message == "No_email") or message == "No_confirm":
         response = {"text": "Alright! That concludes your daily wellness check 😊. Talk to you tomorrow!"}
@@ -746,7 +747,6 @@ def main():
     
     # Save session data at the end of the request
     # Increment history
-    session_dict[user]["history"] += 1
     save_sessions(session_dict)
 
     return jsonify(response)
