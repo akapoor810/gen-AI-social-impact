@@ -546,9 +546,9 @@ def llm_daily(message, user, session_dict):
 
     if "email examples" in response_text:
         buttons = [
-            {"type": "button", "text": "Generate a summary of my symptoms", "msg": "Draft a detailed formal email to generate a summary of my symptoms of today", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Generate a summary of my symptoms"},
-            {"type": "button", "text": "Schedule an appointment", "msg": "I want to schedule an appointment with my doctor. Ask them for availability and provide them with my current symptoms", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Schedule an appointment"},
-            {"type": "button", "text": "Ask my doctor for specific medical advice", "msg": "Draft a detailed formal email to ask my doctor for specific medical advice about my symptoms", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Ask my doctor for specific medical advice"}
+            {"type": "button", "text": "Generate a summary of my symptoms", "msg": "Draft a detailed formal email with a summary of my symptoms of today", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Generate a summary of my symptoms"},
+            {"type": "button", "text": "Ask my doctor for specific medical advice", "msg": "Draft a detailed formal email to ask my doctor for specific medical advice about my symptoms", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Ask my doctor for specific medical advice"},
+            {"type": "button", "text": "Schedule an appointment", "msg": "Draft a detailed formal email to schedule an appointment with my doctor. In the email, ask them for availability and provide them with my current symptoms", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Schedule an appointment"}
         ]
     
         return {
