@@ -406,7 +406,7 @@ def llm_daily(message, user, session_dict):
             Your goal is to **assess the patient's well-being** by asking relevant questions based on their condition, 
             evaluating their responses, and offering appropriate advice.  
 
-            Step 1: ALWAYS start every interaction with: "Hi {first_name} 👋! Let's begin your daily wellness check for {session_dict[user]['condition']} 📋 First off, have you taken your daily doses of {formatted_meds}?"
+            Step 1: NO MATTER WHAT ALWAYS start every interaction with: "Hi {first_name} 👋! Let's begin your daily wellness check for {session_dict[user]['condition']} 📋 First off, have you taken your daily doses of {formatted_meds}?"
             If the user confirms they have taken their medications, move to Step 2.
             Else, remind them to take their medications.
             Step 2: Ask 3 symptom-related questions that are specific to their condition. Start every question with "Question [what number question you're on])". Ask one question at a time, acknowledging and responding to the user's response before posing the next question. If the user has a follow up question, respond to that before posing your next question. Do not ask all the questions at once.
@@ -418,7 +418,7 @@ def llm_daily(message, user, session_dict):
             - If the symptoms are **severe**, urgent, or risky, gently ask the user if they would like to contact their **emergency contact** (**{session_dict[user]['emergency_email']}**).  
             - Address any follow-up questions the user might have before moving on to the question.
             Step 4: After you have concluded asking all 3 questions and answered any follow-up questions from the user, ask, "Would you like to contact your doctor about anything we've discussed, or other symptoms?"
-            Step 5: After asking the user for the subject and content of their email, append the following to your message: ["Here are some examples you might consider:\n• Generate a summary of my symptoms\n•Ask my doctor for specific medical advice\n•Express interest in scheduling a consultation/appointment"]
+            Step 5: After asking the user for the subject and content of their email, append the following to your message: "Here are some email examples you might consider:\n• Generate a summary of my symptoms\n•Ask my doctor for specific medical advice\n•Express interest in scheduling a consultation/appointment"
             Step 6: Once the user has provided the subject and content parameters of the email, respond with: "Subject of email: [subject]\nContent of email: [content of email]\nPlease confirm if you're ready to send the email to {session_dict[user]["emergency_email"]}".
 
             ### **Response Guidelines**  
@@ -525,7 +525,26 @@ def llm_daily(message, user, session_dict):
             session_dict[user]['email_content'] = content
             save_sessions(session_dict)
     
-    if "Email examples" in response_text:
+    if "daily doses" in response_text:
+        buttons = [
+            {"type": "button", "text": "Yes", "msg": "Yes, I have taken my daily medication", "msg_in_chat_window": True, "msg_processing_type_": "sendMessage", "button_id": "Yes"},
+            {"type": "button", "text": "Naur", "msg": "No, I have not taken my daily medication yet", "msg_in_chat_window": True, "msg_processing_type_": "sendMessage", "button_id": "No i have not"}
+        ]
+    
+        return {
+            "text": response_text,
+            "attachments": [
+                {
+    
+                    "collapsed": False,
+                    "color": "#e3e3e3",
+                    "actions": buttons
+                }
+            ]
+        }
+    
+
+    if "email examples" in response_text:
         buttons = [
             {"type": "button", "text": "Generate a summary of my symptoms", "msg": "Draft a detailed formal email to generate a summary of my symptoms of today", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Generate a summary of my symptoms"},
             {"type": "button", "text": "Schedule an appointment", "msg": "I want to schedule an appointment with my doctor. Ask them for availability and provide them with my current symptoms", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Schedule an appointment"},
