@@ -418,7 +418,7 @@ def llm_daily(message, user, session_dict):
             - If the symptoms are **severe**, urgent, or risky, gently ask the user if they would like to contact their **emergency contact** (**{session_dict[user]['emergency_email']}**).  
             - Address any follow-up questions the user might have before moving on to the question.
             Step 4: After you have concluded asking all 3 questions and answered any follow-up questions from the user, ask, "Would you like to contact your doctor about anything we've discussed, or other symptoms?"
-            Step 5: After asking the user for the subject and content of their email, append the following to your message: "Email examples:\n• Generate a summary of my symptoms\n•Ask my doctor for specific medical advice\n•Express interest in scheduling a consultation/appointment"
+            Step 5: After asking the user for the subject and content of their email, append the following to your message: ["Here are some examples you might consider:\n• Generate a summary of my symptoms\n•Ask my doctor for specific medical advice\n•Express interest in scheduling a consultation/appointment"]
             Step 6: Once the user has provided the subject and content parameters of the email, respond with: "Subject of email: [subject]\nContent of email: [content of email]\nPlease confirm if you're ready to send the email to {session_dict[user]["emergency_email"]}".
 
             ### **Response Guidelines**  
@@ -454,9 +454,6 @@ def llm_daily(message, user, session_dict):
         rag_threshold='0.5',
         rag_k=5
     )
-    # Increment history
-    session_dict[user]["history"] = session_dict[user]["history"] + 1
-    save_sessions(session_dict)
 
     # TODO: Determine k value. play around with RAG threshold
     response_text = response.get("response", "⚠️ Sorry, I couldn't process that. Could you rephrase?").strip() if isinstance(response, dict) else response.strip()
@@ -495,7 +492,7 @@ def llm_daily(message, user, session_dict):
                 print("No revised message found.")
 
         elif "rejected" in qa_response.lower():
-            response_text = f"I'm not sure how to evaluate those systems. 🙁 Would you like to contact your doctor at {session_dict[user]['emergency_email']}?"
+            response_text = f"I'm not sure how to evaluate those symptoms. 🙁 Would you like to contact your doctor at {session_dict[user]['emergency_email']}?"
 
 
     if "would you like to contact your doctor" in response_text.lower():
@@ -655,9 +652,6 @@ def qa_agent(message, agent_response, user, session_dict):
         rag_threshold='0.7',
         rag_k=10
     )
-    # Increment history
-    session_dict[user]["history"] = session_dict[user]["history"] + 1
-    save_sessions(session_dict)
 
     response_text = response.get("response", "⚠️ Sorry, I couldn't process that. Could you rephrase?").strip() if isinstance(response, dict) else response.strip()
     print(f"qa agent said: {response_text}")
@@ -745,14 +739,16 @@ def main():
     
     elif message.lower() == "weekly update":
         if session_dict[user].get("onboarding_stage") == "done":
-            update_response = weekly_update_internal(user, session_dict)
-            return jsonify(update_response)
+            response = weekly_update_internal(user, session_dict)
         else:
-            return jsonify({"text": "Please complete onboarding before requesting a weekly update."})
+            response = {"text": "Please complete onboarding before requesting a weekly update."}
 
     
     # Save session data at the end of the request
+    # Increment history
+    session_dict[user]["history"] += 1
     save_sessions(session_dict)
+
     return jsonify(response)
 
 
