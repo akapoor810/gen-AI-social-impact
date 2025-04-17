@@ -418,8 +418,7 @@ def llm_daily(message, user, session_dict):
             - If the symptoms are **severe**, urgent, or risky, gently ask the user if they would like to contact their **emergency contact** (**{session_dict[user]['emergency_email']}**).  
             - Address any follow-up questions the user might have before moving on to the question.
             Step 4: After you have concluded asking all 3 questions and answered any follow-up questions from the user, ask, "Would you like to contact your doctor about anything we've discussed, or other symptoms?"
-            Step 5: After asking the user for the subject and content of their email, append the following to your message: "Here are some email examples you might consider:\n• Generate a summary of my symptoms\n•Ask my doctor for specific medical advice\n•Express interest in scheduling a consultation/appointment"
-            Step 6: Once the user has provided the subject and content parameters of the email, respond with: "Subject of email: [subject]\nContent of email: [content of email]\nPlease confirm if you're ready to send the email to {session_dict[user]["emergency_email"]}".
+            Step 5: Once the user has provided the subject and content parameters of the email, respond with: "Subject of email: [subject]\nContent of email: [content of email]\nPlease confirm if you're ready to send the email to {session_dict[user]["emergency_email"]}".
 
             ### **Response Guidelines**  
             - ALWAYS USE EMOJIS 
@@ -544,7 +543,7 @@ def llm_daily(message, user, session_dict):
         }
     
 
-    if "email examples" in response_text:
+    if "Yes_email" in response_text:
         buttons = [
             {"type": "button", "text": "Generate a summary of my symptoms", "msg": "Draft a detailed formal email with a summary of my symptoms of today", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Generate a summary of my symptoms"},
             {"type": "button", "text": "Ask my doctor for specific medical advice", "msg": "Draft a detailed formal email to ask my doctor for specific medical advice about my symptoms", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Ask my doctor for specific medical advice"},
@@ -552,7 +551,7 @@ def llm_daily(message, user, session_dict):
         ]
     
         return {
-            "text": response_text,
+            "text": "Great! Let me know what you'd like the subject and content of the email to be.\nHere are some email examples you might consider:\n• Generate a summary of my symptoms\n•Ask my doctor for specific medical advice\n•Express interest in scheduling a consultation/appointment",
             "attachments": [
                 {
     
