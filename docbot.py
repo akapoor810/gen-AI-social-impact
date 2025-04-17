@@ -1,3 +1,5 @@
+from session_mgmt import *
+from user_tools import *
 from flask import send_file
 import threading
 import schedule
@@ -13,116 +15,6 @@ import requests
 import random
 
 app = Flask(__name__)
-
-# JSON file to store user sessions
-SESSION_FILE = "session_store.json"
-
-
-### --- SESSION MANAGEMENT FUNCTIONS --- ###
-def load_sessions():
-    """Load stored sessions from a JSON file."""
-    if os.path.exists(SESSION_FILE):
-        with open(SESSION_FILE, "r") as file:
-            try:
-                session_data = json.load(file)
-                print(f"Loaded session data: {session_data}")
-                return session_data
-            except json.JSONDecodeError:
-                print("Error loading session data, returning empty dict.")
-                return {}  # If file is corrupted, return an empty dict
-    print("No session file found. Returning empty dictionary.")
-    return {}
-
-def save_sessions(session_dict):
-    """Save sessions to a JSON file."""
-    print(f"Saving session data: {session_dict}")
-    with open(SESSION_FILE, "w") as file:
-        json.dump(session_dict, file, indent=4)
-    print("Session data saved.")
-
-
-#WEEKLY TOOL FUNCTIONS
-def websearch(query):
-    with DDGS() as ddgs:
-        results = ddgs.text(query, max_results=5)
-    return [r["href"] for r in results]
-
-def get_page(url):
-    headers = {"User-Agent": "Mozilla/5.0"}
-    response = requests.get(url, headers=headers)
-    if response.status_code == 200:
-        soup = BeautifulSoup(response.text, "html.parser")
-        # Remove non-content tags for a cleaner text
-        for tag in soup(["script", "style", "header", "footer", "nav", "aside"]):
-            tag.extract()
-        text = soup.get_text(separator=" ", strip=True)
-        return " ".join(text.split())[:1500]
-    return f"Failed to fetch {url}, status code: {response.status_code}"
-
-def youtube_search(query):
-    with DDGS() as ddgs:
-        results = ddgs.text(f"{query} site:youtube.com", max_results=5)
-    return [r["href"] for r in results if "youtube.com/watch" in r["href"]]
-
-def tiktok_search(query):
-    with DDGS() as ddgs:
-        results = ddgs.text(f"{query} site:tiktok.com", max_results=5)
-    return [r["href"] for r in results if "tiktok.com" in r["href"]]
-
-def instagram_search(query):
-    hashtag = query.replace(" ", "")
-    with DDGS() as ddgs:
-        results = ddgs.text(f"#{hashtag} site:instagram.com", max_results=5)
-    return [r["href"] for r in results if "instagram.com" in r["href"]]
-
-# --- TOOL PARSER ---
-def extract_tool(text):
-    for tool in ["websearch", "get_page", "youtube_search", "tiktok_search", "instagram_search"]:
-        match = re.search(fr'{tool}\([^)]*\)', text)
-        if match:
-            return match.group()
-    
-    return
-
-
-# --- SEND EMAIL FUNCTION ---
-def send_email(dst, subject, content):
-    print("destination email", dst)
-    print("subject", subject)
-    print("content", content)
-
-    import os, smtplib
-    from email.mime.text import MIMEText
-    from email.mime.multipart import MIMEMultipart
-    import json
- 
-    # Email configuration
-    smtp_server = "smtp-tls.eecs.tufts.edu"  # e.g., mail.yourdomain.com
-    smtp_port = 587  # Usually 587 for TLS, 465 for SSL
-    sender_email = "akapoo02@eecs.tufts.edu"
-    receiver_email = dst
-    password = "anikacs@tufts810"
-
-    # Create the email message
-    msg = MIMEMultipart()
-    msg["From"] = sender_email
-    msg["To"] = receiver_email
-    msg["Subject"] = subject
-
-    body = content
-    msg.attach(MIMEText(body, "plain"))
-
-    # Send email
-    try:
-        server = smtplib.SMTP(smtp_server, smtp_port)
-        server.starttls()  # Secure the connection (use only if the server supports TLS)
-        server.login(sender_email, password)
-        server.sendmail(sender_email, receiver_email, msg.as_string())
-        server.quit()
-        return "Email sent successfully!"
-    except Exception as e:
-        print("there was an error")
-        return f"Error: {e}" 
 
 
 # --- WEEKLY UPDATE FUNCTION ---
@@ -275,13 +167,14 @@ def first_interaction(message, user, session_dict):
     print("MY MES" + message)
     questions = {
         "condition": "🏪 What condition do you have? (Type II Diabetes, Crohn’s disease, or both)",
-        "age": "👋 Hi, I'm DocBot — your health assistant!\n"
-                "I'll help you track symptoms, remind you about meds 💊, and send you health tips 📰.\n\n"
-                "Let's start with a few quick questions.\n 🎂 How old are you?",
+        "age": "👋 Hey there! I'm DocBot, your friendly health assistant.\n"
+        "I'm here to help you stay on top of your health — from tracking symptoms and sending med reminders 💊 to sharing useful tips 📰.\n"
+        "Since it's your first time chatting with me, let's start with a quick intro questionnaire so I can get to know you better.\n\n"
+        "🎂 First things first — how old are you?",
         "weight": "⚖️ What's your weight (in kg)?",
         "medications": "💊 What medications are you currently taking? Please separate each medication with a comma!",
-        "emergency_email": "📱 What is your doctor's email?",
-        "news_pref": "📰 What kind of weekly health updates would you like?\nOptions: Instagram Reel 📱, TikTok 🎵, or Research News 🧪"
+        "emergency_email": "📱 For emergency contact purposes, what is your doctor's email?",
+        "news_pref": "📰 Every week, we'll send you weekly health updates that we think you'll find interesting. What format of content would you prefer? \nOptions: Instagram Reel 📱, TikTok 🎵, or Research News 🧪"
     }
 
     stage = session_dict[user].get("onboarding_stage", "condition")
@@ -316,13 +209,7 @@ def first_interaction(message, user, session_dict):
         ]
         return {
             "text": "🏪 What condition do you have?",
-            "attachments": [
-                {
-                    "collapsed": False,
-                    "color": "#e3e3e3",
-                    "actions": buttons
-                }
-            ]
+            "attachments": [{"collapsed": False, "color": "#e3e3e3", "actions": buttons}]
         }
 
     elif stage == "condition1":
@@ -356,13 +243,7 @@ def first_interaction(message, user, session_dict):
 
         return {
             "text": "📰 What kind of weekly health updates would you like?",
-            "attachments": [
-                {
-                    "collapsed": False,
-                    "color": "#e3e3e3",
-                    "actions": buttons
-                }
-            ]
+            "attachments": [{"collapsed": False, "color": "#e3e3e3", "actions": buttons}]
         }
 
     elif stage == "news_pref":
@@ -376,6 +257,39 @@ def first_interaction(message, user, session_dict):
         save_sessions(session_dict)
         return llm_daily(message, user, session_dict)
     
+
+
+### --- DAILY INTERACTION FUNCTION --- ###
+def llm_general(message, user, session_dict):
+    """Handles any general user questions
+    """
+    print("IN LLM GENERAL")
+    sid = session_dict[user]["session_id"]
+
+    response = generate(
+        model="4o-mini",
+        system=f"""
+            You are a general-purpose medical advice LLM.
+        """,
+
+        query=message,
+        temperature=0.7,
+        lastk=session_dict[user]["history"],
+        session_id=sid,
+        rag_usage=True,
+        rag_threshold='0.5',
+        rag_k=5
+    )
+
+    response_text = response.get("response", "⚠️ Sorry, I couldn't process that. Could you rephrase?").strip() if isinstance(response, dict) else response.strip()
+
+    response_obj = {
+        "text": response_text
+    }
+
+    save_sessions(session_dict)
+    return response_obj
+
 
 
 ### --- DAILY INTERACTION FUNCTION --- ###
@@ -406,7 +320,7 @@ def llm_daily(message, user, session_dict):
             Your goal is to **assess the patient's well-being** by asking relevant questions based on their condition, 
             evaluating their responses, and offering appropriate advice.  
 
-            Step 1: NO MATTER WHAT ALWAYS start every interaction with: "Hi {first_name} 👋! Let's begin your daily wellness check for {session_dict[user]['condition']} 📋 First off, have you taken your daily doses of {formatted_meds}?"
+            Step 1: NO MATTER WHAT ALWAYS start every interaction with: "Hi {first_name} 👋! Let's begin your daily wellness check for {session_dict[user]['condition']}. If you'd like to quit your daily check, you can do so at any time.\n📋 First off, have you taken your daily doses of {formatted_meds}?"
             If the user confirms they have taken their medications, move to Step 2.
             Else, remind them to take their medications.
             Step 2: Ask 3 symptom-related questions that are specific to their condition. Start every question with "Question [what number question you're on])". Ask one question at a time, acknowledging and responding to the user's response before posing the next question. If the user has a follow up question, respond to that before posing your next question. Do not ask all the questions at once.
@@ -417,7 +331,7 @@ def llm_daily(message, user, session_dict):
             - DocBot's advice should not include follow-up questions in addition to the 3 symptom-related questions. Stay focused and on track.
             - If the symptoms are **severe**, urgent, or risky, gently ask the user if they would like to contact their **emergency contact** (**{session_dict[user]['emergency_email']}**).  
             - Address any follow-up questions the user might have before moving on to the question.
-            Step 4: After you have concluded asking all 3 questions and answered any follow-up questions from the user, ask, "Would you like to contact your doctor about anything we've discussed, or other symptoms?"
+            Step 4: After you have concluded asking all 3 questions and answered any follow-up questions from the user, ask, "Would you like to contact your doctor about anything we've discussed, or any other symptoms?"
             Step 5: Once the user has provided the subject and content parameters of the email, respond with: "Subject of email: [subject]\nContent of email: [content of email]\nPlease confirm if you're ready to send the email to {session_dict[user]["emergency_email"]}".
 
             ### **Response Guidelines**  
@@ -454,7 +368,6 @@ def llm_daily(message, user, session_dict):
         rag_k=5
     )
 
-    # TODO: Determine k value. play around with RAG threshold
     response_text = response.get("response", "⚠️ Sorry, I couldn't process that. Could you rephrase?").strip() if isinstance(response, dict) else response.strip()
 
     advice = ""
@@ -467,10 +380,6 @@ def llm_daily(message, user, session_dict):
     advice = advice_match.group(1).strip() if advice_match else "Unable to extract advice."
     if advice != "Unable to extract advice.":
         next_question = question_match.group(1).strip() if question_match else ""
-
-    print(response_text)
-    print("extracted advice" + advice)
-    print("extracted question" + next_question)
     
 
     if "docbot's advice" in response_text.lower():
@@ -501,13 +410,7 @@ def llm_daily(message, user, session_dict):
         ]
         return {
             "text": response_text + "\n" + "👩‍⚕️ Do you want to contact your Doctor?",
-            "attachments": [
-                {
-                    "collapsed": False,
-                    "color": "#e3e3e3",
-                    "actions": buttons
-                }
-            ]
+            "attachments": [{"collapsed": False, "color": "#e3e3e3", "actions": buttons}]
         }
     
 
@@ -532,14 +435,7 @@ def llm_daily(message, user, session_dict):
     
         return {
             "text": response_text,
-            "attachments": [
-                {
-    
-                    "collapsed": False,
-                    "color": "#e3e3e3",
-                    "actions": buttons
-                }
-            ]
+            "attachments": [{"collapsed": False,"color": "#e3e3e3","actions": buttons}]
         }
     
 
@@ -552,14 +448,7 @@ def llm_daily(message, user, session_dict):
     
         return {
             "text": "Great! Let me know what you'd like the subject and content of the email to be.\nHere are some email examples you might consider:\n• Generate a summary of my symptoms\n•Ask my doctor for specific medical advice\n•Express interest in scheduling a consultation/appointment",
-            "attachments": [
-                {
-    
-                    "collapsed": False,
-                    "color": "#e3e3e3",
-                    "actions": buttons
-                }
-            ]
+            "attachments": [{"collapsed": False,"color": "#e3e3e3","actions": buttons}]
         }
     
 
@@ -571,14 +460,7 @@ def llm_daily(message, user, session_dict):
     
         return {
             "text": response_text,
-            "attachments": [
-                {
-    
-                    "collapsed": False,
-                    "color": "#e3e3e3",
-                    "actions": buttons
-                }
-            ]
+            "attachments": [{"collapsed": False,"color": "#e3e3e3","actions": buttons}]
         }
     
     if "Yes_confirm" in message:
@@ -591,11 +473,12 @@ def llm_daily(message, user, session_dict):
         
         session_dict[user]['email_subject'] = ""
         session_dict[user]['email_content'] = ""
-        session_dict[user].get("onboarding_stage") == "done"
+        session_dict[user].get("onboarding_stage") == "general"
         
 
     response_obj = {
-        "text": response_text
+        "text": response_text,
+        "attachments": [{"collapsed": False,"color": "#e3e3e3","actions": {"type": "button", "text": "Quit 🛑", "msg": "Quit daily wellness check", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "choose_yes"},}]
     }
 
     save_sessions(session_dict)
@@ -748,21 +631,29 @@ def main():
     if session_dict[user]["onboarding_stage"] != "done":
         response = first_interaction(message, user, session_dict)
 
-    elif session_dict[user]["onboarding_stage"] == "done":
-        # schedule.every().day.at("09:00").do(llm_daily)
-        response = llm_daily(message, user, session_dict)
-        session_dict[user]["history"] += 1
+    elif session_dict[user]["onboarding_stage"] != "general":
+        if session_dict[user].get("onboarding_stage") == "done":
+            response = llm_general(user, session_dict)
+        else:
+            response = {"text": "Please complete onboarding before requesting a weekly update."}
 
-    elif (message == "No_email") or message == "No_confirm":
-        response = {"text": "Alright! That concludes your daily wellness check 😊. Talk to you tomorrow!"}
-    
     elif message.lower() == "weekly update":
         if session_dict[user].get("onboarding_stage") == "done":
             response = weekly_update_internal(user, session_dict)
         else:
             response = {"text": "Please complete onboarding before requesting a weekly update."}
 
+    elif session_dict[user]["onboarding_stage"] == "daily":
+        # schedule.every().day.at("09:00").do(llm_daily)
+        response = llm_daily(message, user, session_dict)
+        session_dict[user]["history"] += 1
     
+    elif "quit daily wellness check" in message.lower() or message == "No_email" or message == "No_confirm":
+        # schedule.every().day.at("09:00").do(llm_daily)
+        session_dict[user]["onboarding_stage"] == "general"
+        response = {"text": "Alright! That concludes your daily wellness check 😊. If you have any other questions throughout the day, feel free to ask!"}
+    
+
     # Save session data at the end of the request
     # Increment history
     save_sessions(session_dict)
