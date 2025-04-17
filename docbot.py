@@ -251,16 +251,15 @@ def llm_general(message, user, session_dict):
     response = generate(
         model="4o-mini",
         system=f"""
-            You are a general-purpose medical advice LLM.
+            You are a general-purpose medical advice LLM designed to help patients
+            with Crohn's Disease and Type II Diabetes.
         """,
 
         query=message,
         temperature=0.7,
         lastk=session_dict[user]["history"],
         session_id=sid,
-        rag_usage=True,
-        rag_threshold='0.5',
-        rag_k=5
+        rag_usage=False
     )
 
     response_text = response.get("response", "⚠️ Sorry, I couldn't process that. Could you rephrase?").strip() if isinstance(response, dict) else response.strip()
@@ -273,6 +272,8 @@ def llm_general(message, user, session_dict):
     return response_obj
 
 
+# TODO: Should we make it clear that the daily wellness check is not meant for follow up questions,
+# it is just meant to track symptoms and general questions can be asked outside of the wellness check?
 
 ### --- DAILY INTERACTION FUNCTION --- ###
 def llm_daily(message, user, session_dict):
@@ -301,7 +302,8 @@ def llm_daily(message, user, session_dict):
         ### **Role & Purpose**  
         You are a compassionate and professional **nurse** performing a routine **wellness check** on a patient with {session_dict[user]['condition']}.  
         Your goal is to **assess the patient's well-being** by asking relevant questions based on their condition, 
-        evaluating their responses, and offering appropriate advice.  
+        evaluating their responses, and offering appropriate advice. Maintain a warm, empathetic, and professional tone, 
+        and use simple, easy-to-understand language.  
 
         Step 1: NO MATTER WHAT ALWAYS start every interaction with: "Hi {first_name} 👋! Let's begin your daily wellness check for {session_dict[user]['condition']}. If you'd like to quit your daily check, you can do so at any time.\n📋 First off, have you taken your daily doses of {formatted_meds}?"
         If the user confirms they have taken their medications, move to Step 2.
@@ -319,10 +321,8 @@ def llm_daily(message, user, session_dict):
 
         ### **Response Guidelines**  
         - ALWAYS USE EMOJIS 
-        - Only respond to queries related to the user's condition and current symptoms. If the user gets off track
-        remind them that you are here to assess their well-being and take their current symptoms.
-        - **Tone:** Maintain a warm, empathetic, and professional tone.  
-        - **Clarity:** Use simple, easy-to-understand language.  
+        - If the user gets off track, remind them that you are here to assess their well-being and take their current symptoms.
+        - Your main purpose is to record how the user is feeling. If they have follow up questions ask them to ask these questions outside the daily wellness check, and remind them they can Quit out of daily wellness check if they would like.
         - **Avoid Diagnosis:** Do **not** diagnose conditions—only assess symptoms and offer general wellness advice.  
         - **Encourage Action:** If symptoms worsen, encourage the user to seek medical help.
         - All emails you draft should be formal and detailed.
@@ -364,6 +364,7 @@ def llm_daily(message, user, session_dict):
         next_question = question_match.group(1).strip() if question_match else ""
     
 
+    # When to send to QA agent?
     if "docbot's advice" in response_text.lower():
         qa_response = qa_agent(message, advice, user, session_dict)
 
@@ -417,7 +418,7 @@ def llm_daily(message, user, session_dict):
     
         response_obj = {
             "text": response_text,
-            "attachments": [{"collapsed": False,"color": "#e3e3e3","actions": buttons}]
+            "attachments": [{"collapsed": False, "color": "#e3e3e3", "actions": buttons}]
         }
     
 
@@ -597,7 +598,7 @@ def main():
         print("new user", user)
         session_dict[user] = {
             "session_id": f"{user}-session",
-            "onboarding_stage": "condition",
+            "onboarding_stage": "start",
             "condition": "",
             "age": 0,
             "weight": 0,
