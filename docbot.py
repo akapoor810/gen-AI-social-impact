@@ -165,14 +165,20 @@ def rag_upload(condition, user, session_dict):
 ### --- ONBOARDING FUNCTION --- ###
 def first_interaction(message, user, session_dict):
     print("MY MES" + message)
+    med_examples = ""
+    if session_dict[user]["condition"] == "Crohn's":
+        med_examples = "aminosalicylates, corticosteroids, immunomodulators"
+    elif session_dict[user]["condition"] == "Type II Diabetes":
+        med_examples = "metformin, sulfonylureas, insulin"
+
     questions = {
-        "condition": "🏪 What condition do you have? (Type II Diabetes, Crohn’s disease, or both)",
+        "condition": "🏪 What condition do you have? (Type II Diabetes, Crohn's disease, or both)",
         "age": "👋 Hey there! I'm DocBot, your friendly health assistant.\n"
         "I'm here to help you stay on top of your health — from tracking symptoms and sending med reminders 💊 to sharing useful tips 📰.\n"
         "Since it's your first time chatting with me, let's start with a quick intro questionnaire so I can get to know you better.\n\n"
         "🎂 First things first — how old are you?",
         "weight": "⚖️ What's your weight (in kg)?",
-        "medications": "💊 What medications are you currently taking? Please separate each medication with a comma!",
+        f"medications": "💊 What medications are you currently taking? (e.g. {med_examples}) Please separate each medication with a comma!",
         "emergency_email": "📱 For emergency contact purposes, what is your doctor's email?",
         "news_pref": "📰 Every week, we'll send you weekly health updates that we think you'll find interesting. What format of content would you prefer? \nOptions: Instagram Reel 📱, TikTok 🎵, or Research News 🧪"
     }
@@ -242,7 +248,7 @@ def first_interaction(message, user, session_dict):
         ]
 
         return {
-            "text": "📰 What kind of weekly health updates would you like?",
+            "text": questions["news_pref"],
             "attachments": [{"collapsed": False, "color": "#e3e3e3", "actions": buttons}]
         }
 
@@ -259,7 +265,7 @@ def first_interaction(message, user, session_dict):
     
 
 
-### --- DAILY INTERACTION FUNCTION --- ###
+### --- GENERAL QUESTION FUNCTION --- ###
 def llm_general(message, user, session_dict):
     """Handles any general user questions
     """
@@ -370,6 +376,10 @@ def llm_daily(message, user, session_dict):
 
     response_text = response.get("response", "⚠️ Sorry, I couldn't process that. Could you rephrase?").strip() if isinstance(response, dict) else response.strip()
 
+    response_obj = {
+        "text": response_text,
+    }
+
     advice = ""
     next_question = ""
 
@@ -393,14 +403,14 @@ def llm_daily(message, user, session_dict):
             if match:
                 advice = match.group(1).strip()
                 if "next_question" != "END":
-                    response_text = "DocBot's Advice: " + advice + "\n\n" + next_question
+                    response_obj["text"] = "DocBot's Advice: " + advice + "\n\n" + next_question
                 else:
-                    response_text = advice
+                    response_obj["text"] = advice
             else:
                 print("No revised message found.")
 
         elif "rejected" in qa_response.lower():
-            response_text = f"I'm not sure how to evaluate those symptoms. 🙁 Would you like to contact your doctor at {session_dict[user]['emergency_email']}?"
+            response_obj["text"] = f"I'm not sure how to evaluate those symptoms. 🙁 Would you like to contact your doctor at {session_dict[user]['emergency_email']}?"
 
 
     if "would you like to contact your doctor" in response_text.lower():
@@ -408,7 +418,7 @@ def llm_daily(message, user, session_dict):
             {"type": "button", "text": "Yes ✅", "msg": "Yes_email", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "choose_yes"},
             {"type": "button", "text": "No ❌", "msg": "No_email", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "choose_no"}
         ]
-        return {
+        response_obj = {
             "text": response_text + "\n" + "👩‍⚕️ Do you want to contact your Doctor?",
             "attachments": [{"collapsed": False, "color": "#e3e3e3", "actions": buttons}]
         }
@@ -433,7 +443,7 @@ def llm_daily(message, user, session_dict):
             {"type": "button", "text": "No", "msg": "No, I have not taken my daily medication yet", "msg_in_chat_window": True, "msg_processing_type_": "sendMessage", "button_id": "No i have not"}
         ]
     
-        return {
+        response_obj = {
             "text": response_text,
             "attachments": [{"collapsed": False,"color": "#e3e3e3","actions": buttons}]
         }
@@ -446,7 +456,7 @@ def llm_daily(message, user, session_dict):
             {"type": "button", "text": "Schedule an appointment", "msg": "Draft a detailed formal email to schedule an appointment with my doctor. In the email, ask them for availability and provide them with my current symptoms", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Schedule an appointment"}
         ]
     
-        return {
+        response_obj = {
             "text": "Great! Let me know what you'd like the subject and content of the email to be.\nHere are some email examples you might consider:\n• Generate a summary of my symptoms\n•Ask my doctor for specific medical advice\n•Express interest in scheduling a consultation/appointment",
             "attachments": [{"collapsed": False,"color": "#e3e3e3","actions": buttons}]
         }
@@ -458,28 +468,31 @@ def llm_daily(message, user, session_dict):
             {"type": "button", "text": "Don't send... ❌", "msg": "No_confirm", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "choose_no"}
         ]
     
-        return {
+        response_obj = {
             "text": response_text,
             "attachments": [{"collapsed": False,"color": "#e3e3e3","actions": buttons}]
         }
     
     if "Yes_confirm" in message:
-        subject = session_dict[user]['email_subject']
-        content = session_dict[user]['email_content']
-        print("about to send email:", subject, content)
+        subject, content = session_dict[user]['email_subject'], session_dict[user]['email_content']
         send_email(session_dict[user]["emergency_email"], subject, content)
 
-        response_text = f"📧 Email successfully sent to your doctor at {session_dict[user]["emergency_email"]}!\n\nIf there's anything else you need, don't hesitate to ask! 😊"
+        response_obj["text"] = f"📧 Email successfully sent to your doctor at {session_dict[user]["emergency_email"]}!\n\nIf there's anything else you need, don't hesitate to ask! 😊"
         
-        session_dict[user]['email_subject'] = ""
-        session_dict[user]['email_content'] = ""
+        session_dict[user]['email_subject'] = session_dict[user]['email_content'] = ""
         session_dict[user].get("onboarding_stage") == "general"
-        
 
-    response_obj = {
-        "text": response_text,
-        "attachments": [{"collapsed": False,"color": "#e3e3e3","actions": {"type": "button", "text": "Quit 🛑", "msg": "Quit daily wellness check", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "choose_yes"},}]
-    }
+
+    # Append Quit button to every message
+    if "attachments" not in response_obj:
+        response_obj["attachments"] = []
+
+    # Ensure the Quit button is added after other buttons
+    response_obj["attachments"].append({
+        "collapsed": False,
+        "color": "#e3e3e3",
+        "actions": [{"type": "button", "text": "Quit 🛑", "msg": "Quit daily wellness check", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "choose_yes"}]
+    })
 
     save_sessions(session_dict)
     return response_obj
@@ -633,7 +646,7 @@ def main():
 
     elif session_dict[user]["onboarding_stage"] != "general":
         if session_dict[user].get("onboarding_stage") == "done":
-            response = llm_general(user, session_dict)
+            response = llm_general(message, user, session_dict)
         else:
             response = {"text": "Please complete onboarding before requesting a weekly update."}
 
