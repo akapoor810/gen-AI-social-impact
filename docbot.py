@@ -149,21 +149,20 @@ def first_interaction(message, user, session_dict):
         med_examples = "metformin, sulfonylureas, insulin"
 
     questions = {
-        "condition": "🏪 What condition do you have? (Type II Diabetes, Crohn's disease, or both)",
         "age": "👋 Hey there! I'm DocBot, your friendly health assistant.\n"
         "I'm here to help you stay on top of your health — from tracking symptoms and sending med reminders 💊 to sharing useful tips 📰.\n"
         "Since it's your first time chatting with me, let's start with a quick intro questionnaire so I can get to know you better.\n\n"
         "🎂 First things first — how old are you?",
         "weight": "⚖️ What's your weight (in kg)?",
+        "condition": "🏪 What condition do you have? (Type II Diabetes, Crohn's disease, or both)",
         "medications": f"💊 What medications are you currently taking? (e.g. {med_examples}) Please separate each medication with a comma!",
         "emergency_email": "📱 For emergency contact purposes, what is your doctor's email?",
         "news_pref": "📰 Every week, we'll send you weekly health updates that we think you'll find interesting. What format of content would you prefer?"
     }
 
-    stage = session_dict[user].get("onboarding_stage", "condition")
+    stage = session_dict[user].get("onboarding_stage", "start")
 
-    if stage == "condition":
-        session_dict[user]["condition"] = message
+    if stage == "start":
         session_dict[user]["onboarding_stage"] = "age"
         save_sessions(session_dict)
         return {"text": questions["age"]}
@@ -183,9 +182,9 @@ def first_interaction(message, user, session_dict):
             return {"text": "❗ Please enter a valid weight (a number in kg)."}
         
         session_dict[user]["weight"] = cleaned
-        session_dict[user]["onboarding_stage"] = "condition1"
+        session_dict[user]["onboarding_stage"] = "condition"
         save_sessions(session_dict)
-
+        
         buttons = [
             {"type": "button", "text": "Crohn's", "msg": "Crohn's", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "choose_condition_crohns"},
             {"type": "button", "text": "Type II Diabetes", "msg": "Type II Diabetes", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "choose_condition_diabetes"}
@@ -195,7 +194,7 @@ def first_interaction(message, user, session_dict):
             "attachments": [{"collapsed": False, "color": "#e3e3e3", "actions": buttons}]
         }
 
-    elif stage == "condition1":
+    elif stage == "condition":
         valid_conditions = ["Crohn's", "Type II Diabetes"]
 
         if message not in valid_conditions:
