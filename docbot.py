@@ -154,7 +154,7 @@ def first_interaction(message, user, session_dict):
         "Since it's your first time chatting with me, let's start with a quick intro questionnaire so I can get to know you better.\n\n"
         "🎂 First things first — how old are you?",
         "weight": "⚖️ What's your weight (in kg)?",
-        f"medications": "💊 What medications are you currently taking? (e.g. {med_examples}) Please separate each medication with a comma!",
+        "medications": f"💊 What medications are you currently taking? (e.g. {med_examples}) Please separate each medication with a comma!",
         "emergency_email": "📱 For emergency contact purposes, what is your doctor's email?",
         "news_pref": "📰 Every week, we'll send you weekly health updates that we think you'll find interesting. What format of content would you prefer? \nOptions: Instagram Reel 📱, TikTok 🎵, or Research News 🧪"
     }
