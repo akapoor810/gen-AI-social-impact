@@ -452,7 +452,7 @@ def llm_daily(message, user, session_dict):
         response_obj["text"] = f"📧 Email successfully sent to your doctor at {session_dict[user]["emergency_email"]}!\n\nIf there's anything else you need, don't hesitate to ask! 😊"
         
         session_dict[user]['email_subject'] = session_dict[user]['email_content'] = ""
-        session_dict[user].get("stage") = "general"
+        session_dict[user]["stage"] = "general"
 
 
     # Append Quit button to every message
