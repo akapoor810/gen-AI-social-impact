@@ -140,7 +140,8 @@ def weekly_update_internal(user, session_dict):
 
 ### --- ONBOARDING FUNCTION --- ###
 def first_interaction(message, user, session_dict):
-    print("MY MES" + message)
+    print("In first interaction")
+    print(f"user condition is: {session_dict[user]["condition"]}")
     med_examples = ""
     if session_dict[user]["condition"] == "Crohn's":
         med_examples = "aminosalicylates, corticosteroids, immunomodulators"
