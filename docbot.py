@@ -147,7 +147,7 @@ def first_interaction(message, user, session_dict):
         "🎂 First things first — how old are you?",
         "weight": "⚖️ What's your weight (in kg)?",
         "condition": "🏪 What condition do you have? (Type II Diabetes, Crohn's disease, or both)",
-        "medications": f"💊 What medications are you currently taking? (e.g. {med_examples}) Please separate each medication with a comma!",
+        "medications": f"💊 What medications are you currently taking? Please separate each medication with a comma!",
         "emergency_email": "📱 For emergency contact purposes, what is your doctor's email?",
         "news_pref": "📰 Every week, we'll send you weekly health updates that we think you'll find interesting. What format of content would you prefer?"
     }
