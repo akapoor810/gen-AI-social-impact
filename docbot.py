@@ -608,7 +608,6 @@ def main():
             "history": 1
         }
         save_sessions(session_dict)  # Save immediately after creating new session
-        print(session_dict[user]["condition"])
         rag_upload(session_dict[user]["condition"], user, session_dict)
         print("🔄 Restarted onboarding.")
 
@@ -617,11 +616,11 @@ def main():
     if session_dict[user]["onboarding_stage"] != "done":
         response = first_interaction(message, user, session_dict)
 
-    elif session_dict[user]["onboarding_stage"] != "general":
+    elif session_dict[user]["onboarding_stage"] == "general":
         if session_dict[user].get("onboarding_stage") == "done":
             response = llm_general(message, user, session_dict)
         else:
-            response = {"text": "Please complete onboarding before requesting a weekly update."}
+            response = {"text": "Please complete onboarding before asking general questions."}
 
     elif message.lower() == "weekly update":
         if session_dict[user].get("onboarding_stage") == "done":
