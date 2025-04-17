@@ -152,10 +152,10 @@ def first_interaction(message, user, session_dict):
         "news_pref": "📰 Every week, we'll send you weekly health updates that we think you'll find interesting. What format of content would you prefer?"
     }
 
-    stage = session_dict[user].get("onboarding_stage", "start")
+    stage = session_dict[user].get("stage", "start")
 
     if stage == "start":
-        session_dict[user]["onboarding_stage"] = "age"
+        session_dict[user]["stage"] = "age"
         save_sessions(session_dict)
         return {"text": questions["age"]}
 
@@ -163,7 +163,7 @@ def first_interaction(message, user, session_dict):
         if not message.isdigit():
             return {"text": "❗ Please enter a valid age (a number)."}
         session_dict[user]["age"] = int(message)
-        session_dict[user]["onboarding_stage"] = "weight"
+        session_dict[user]["stage"] = "weight"
         save_sessions(session_dict)
         return {"text": questions["weight"]}
 
@@ -174,7 +174,7 @@ def first_interaction(message, user, session_dict):
             return {"text": "❗ Please enter a valid weight (a number in kg)."}
         
         session_dict[user]["weight"] = cleaned
-        session_dict[user]["onboarding_stage"] = "condition"
+        session_dict[user]["stage"] = "condition"
         save_sessions(session_dict)
         
         buttons = [
@@ -193,7 +193,7 @@ def first_interaction(message, user, session_dict):
             return {"text": "Please click one of the buttons above to continue."}
 
         session_dict[user]["condition"] = message
-        session_dict[user]["onboarding_stage"] = "medications"
+        session_dict[user]["stage"] = "medications"
         save_sessions(session_dict)
 
         med_examples = ""
@@ -206,13 +206,13 @@ def first_interaction(message, user, session_dict):
 
     elif stage == "medications":
         session_dict[user]["medications"] = [med.strip() for med in message.split(",")]
-        session_dict[user]["onboarding_stage"] = "emergency_email"
+        session_dict[user]["stage"] = "emergency_email"
         save_sessions(session_dict)
         return {"text": questions["emergency_email"]}
 
     elif stage == "emergency_email":
         session_dict[user]["emergency_email"] = message
-        session_dict[user]["onboarding_stage"] = "news_pref"
+        session_dict[user]["stage"] = "news_pref"
         save_sessions(session_dict)
 
         buttons = [
@@ -234,7 +234,7 @@ def first_interaction(message, user, session_dict):
             return {"text": "Please click one of the buttons above to continue."}
 
         session_dict[user]["news_pref"] = [message]
-        session_dict[user]["onboarding_stage"] = "daily"
+        session_dict[user]["stage"] = "daily"
         save_sessions(session_dict)
         return llm_daily(message, user, session_dict)
     
@@ -452,7 +452,7 @@ def llm_daily(message, user, session_dict):
         response_obj["text"] = f"📧 Email successfully sent to your doctor at {session_dict[user]["emergency_email"]}!\n\nIf there's anything else you need, don't hesitate to ask! 😊"
         
         session_dict[user]['email_subject'] = session_dict[user]['email_content'] = ""
-        session_dict[user].get("onboarding_stage") = "general"
+        session_dict[user].get("stage") = "general"
 
 
     # Append Quit button to every message
@@ -597,7 +597,7 @@ def main():
         print("new user", user)
         session_dict[user] = {
             "session_id": f"{user}-session",
-            "onboarding_stage": "start",
+            "stage": "start",
             "condition": "",
             "age": 0,
             "weight": 0,
@@ -612,28 +612,29 @@ def main():
 
 
     response = ""
-    if session_dict[user]["onboarding_stage"] != "done":
+    onboarding = ["start", "age", "weight", "condition", "medications", "emergency_email", "news_pref"]
+    if session_dict[user]["stage"] in onboarding:
         response = first_interaction(message, user, session_dict)
         session_dict[user]["history"] = 1
 
     elif message.lower() == "weekly update":
-        if session_dict[user].get("onboarding_stage") == "done":
+        if session_dict[user].get("stage") in onboarding:
             response = weekly_update_internal(user, session_dict)
         else:
             response = {"text": "Please complete onboarding before requesting a weekly update."}
 
     elif message == "Quit daily wellness check" or message == "No_email" or message == "No_confirm":
         # schedule.every().day.at("09:00").do(llm_daily)
-        session_dict[user]["onboarding_stage"] = "general"
+        session_dict[user]["stage"] = "general"
         response = {"text": "Alright! That concludes your daily wellness check 😊. If you have any other questions throughout the day, feel free to ask!"}
     
-    elif session_dict[user]["onboarding_stage"] == "general":
-        if session_dict[user].get("onboarding_stage") == "done":
+    elif session_dict[user]["stage"] == "general":
+        if session_dict[user].get("stage") in onboarding:
             response = llm_general(message, user, session_dict)
         else:
             response = {"text": "Please complete onboarding before asking general questions."}
 
-    elif session_dict[user]["onboarding_stage"] == "daily":
+    elif session_dict[user]["stage"] == "daily":
         # schedule.every().day.at("09:00").do(llm_daily)
         response = llm_daily(message, user, session_dict)
     
