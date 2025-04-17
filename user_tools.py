@@ -94,3 +94,30 @@ def send_email(dst, subject, content):
     except Exception as e:
         print("there was an error")
         return f"Error: {e}" 
+    
+
+
+### --- RAG UPLOAD FUNCTION --- ###
+def rag_upload(condition, user, session_dict):
+    sid = session_dict[user]["session_id"]
+    if "diabetes" in condition.lower():
+        pdf_upload(path = 'HCS-Booklet-Diabetes Type 2 Guidebook.pdf',
+        session_id = sid,
+        strategy = 'smart')
+        
+        pdf_upload(path = 'standards-of-care-2023.pdf',
+        session_id = sid,
+        strategy = 'smart')
+    
+    else:
+        pdf_upload(path = 'ACG-Crohns-Guideline-Summary.pdf',
+        session_id = sid,
+        strategy = 'smart')
+
+        pdf_upload(path = 'crohns-disease.pdf',
+        session_id = sid,
+        strategy = 'smart')
+
+        pdf_upload(path = 'living-with-crohns-disease.pdf',
+        session_id = sid,
+        strategy = 'smart')

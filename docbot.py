@@ -24,50 +24,50 @@ def agent_weekly_update(user_info, health_info):
     The agent returns a tool call (e.g., youtube_search("gut health smoothies")).
     """
     system = f"""
-You are an AI agent designed to handle weekly health content updates for users with specific health conditions.
+    You are an AI agent designed to handle weekly health content updates for users with specific health conditions.
 
-In addition to your own intelligence, you are given access to a set of tools that let you fetch personalized health content from various online platforms.
+    In addition to your own intelligence, you are given access to a set of tools that let you fetch personalized health content from various online platforms.
 
-Your job is to use the right tool to deliver a helpful and engaging content recommendation **based on the user's health condition and preferences**.
+    Your job is to use the right tool to deliver a helpful and engaging content recommendation **based on the user's health condition and preferences**.
 
-Think step-by-step about which platform is best for this week's update, and then return the correct tool call using the examples provided.
+    Think step-by-step about which platform is best for this week's update, and then return the correct tool call using the examples provided.
 
-ONLY respond with a tool call like: youtube_search("gut health smoothies")
+    ONLY respond with a tool call like: youtube_search("gut health smoothies")
 
-### USER INFORMATION ###
-- Name: {user_info.get('name')}
-- Health condition: {health_info.get('condition')}
-- Preferred platform: {user_info.get('news_pref')}
-- Preferred news sources: {", ".join(user_info.get('news_sources', []))}
+    ### USER INFORMATION ###
+    - Name: {user_info.get('name')}
+    - Health condition: {health_info.get('condition')}
+    - Preferred platform: {user_info.get('news_pref')}
+    - Preferred news sources: {", ".join(user_info.get('news_sources', []))}
 
-### PROVIDED TOOLS INFORMATION ###
+    ### PROVIDED TOOLS INFORMATION ###
 
-##1. Tool to perform a YouTube video search
-Name: youtube_search
-Parameters: query
-Example usage: youtube_search("crohn's anti-inflammatory meals")
+    ##1. Tool to perform a YouTube video search
+    Name: youtube_search
+    Parameters: query
+    Example usage: youtube_search("crohn's anti-inflammatory meals")
 
-##2. Tool to search TikTok for short-form video content
-Name: tiktok_search
-Parameters: query
-Example usage: tiktok_search("what I eat with IBS")
+    ##2. Tool to search TikTok for short-form video content
+    Name: tiktok_search
+    Parameters: query
+    Example usage: tiktok_search("what I eat with IBS")
 
-##3. Tool to search Instagram posts/reels via hashtags
-Name: instagram_search
-Parameters: query
-Example usage: instagram_search("gut healing routine")
+    ##3. Tool to search Instagram posts/reels via hashtags
+    Name: instagram_search
+    Parameters: query
+    Example usage: instagram_search("gut healing routine")
 
-##4. Tool to perform a websearch using DuckDuckGo
-Name: websearch
-Parameters: query
-Example usage: websearch("best probiotics for gut health site:bbc.com")
-Example usage: websearch("latest Crohn's breakthroughs site:nytimes.com")
+    ##4. Tool to perform a websearch using DuckDuckGo
+    Name: websearch
+    Parameters: query
+    Example usage: websearch("best probiotics for gut health site:bbc.com")
+    Example usage: websearch("latest Crohn's breakthroughs site:nytimes.com")
 
-ONLY respond with one tool call. Do NOT explain or add any extra text.
-Make your query specific, relevant to the condition, and useful.
+    ONLY respond with one tool call. Do NOT explain or add any extra text.
+    Make your query specific, relevant to the condition, and useful.
 
-Each time you search, make sure the search query is different from the previous week's content.
-"""
+    Each time you search, make sure the search query is different from the previous week's content.
+    """
     response = generate(
         model='4o-mini',
         system=system,
@@ -79,6 +79,8 @@ Each time you search, make sure the search query is different from the previous 
     )
     print(f"🔍 Raw agent response: {response}")
     return response['response']
+
+
 
 # --- WEEKLY UPDATE INTERNAL HELPER ---
 def weekly_update_internal(user, session_dict):
@@ -133,32 +135,6 @@ def weekly_update_internal(user, session_dict):
         print("❌ Exception during weekly update:")
         traceback.print_exc()
         return {"text": f"Error: {str(e)}"}
-
-
-### --- RAG UPLOAD FUNCTION --- ###
-def rag_upload(condition, user, session_dict):
-    sid = session_dict[user]["session_id"]
-    if "diabetes" in condition.lower():
-        pdf_upload(path = 'HCS-Booklet-Diabetes Type 2 Guidebook.pdf',
-        session_id = sid,
-        strategy = 'smart')
-        
-        pdf_upload(path = 'standards-of-care-2023.pdf',
-        session_id = sid,
-        strategy = 'smart')
-    
-    else:
-        pdf_upload(path = 'ACG-Crohns-Guideline-Summary.pdf',
-        session_id = sid,
-        strategy = 'smart')
-
-        pdf_upload(path = 'crohns-disease.pdf',
-        session_id = sid,
-        strategy = 'smart')
-
-        pdf_upload(path = 'living-with-crohns-disease.pdf',
-        session_id = sid,
-        strategy = 'smart')
 
 
 
@@ -259,7 +235,7 @@ def first_interaction(message, user, session_dict):
             return {"text": "Please click one of the buttons above to continue."}
 
         session_dict[user]["news_pref"] = [message]
-        session_dict[user]["onboarding_stage"] = "done"
+        session_dict[user]["onboarding_stage"] = "daily"
         save_sessions(session_dict)
         return llm_daily(message, user, session_dict)
     
