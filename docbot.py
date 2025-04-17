@@ -88,9 +88,6 @@ def weekly_update_internal(user, session_dict):
     Generate the weekly update for a given user.
     Returns a dictionary with the update results including a "text" key for display.
     """
-    if user not in session_dict:
-        return {"text": "User not found in session."}
-    
     user_session = session_dict[user]
     user_info = {
         "name": user,
@@ -142,11 +139,6 @@ def weekly_update_internal(user, session_dict):
 def first_interaction(message, user, session_dict):
     print("In first interaction")
     print(f"user condition is: {session_dict[user]["condition"]}")
-    med_examples = ""
-    if session_dict[user]["condition"] == "Crohn's":
-        med_examples = "aminosalicylates, corticosteroids, immunomodulators"
-    elif session_dict[user]["condition"] == "Type II Diabetes":
-        med_examples = "metformin, sulfonylureas, insulin"
 
     questions = {
         "age": "👋 Hey there! I'm DocBot, your friendly health assistant.\n"
@@ -203,7 +195,14 @@ def first_interaction(message, user, session_dict):
         session_dict[user]["condition"] = message
         session_dict[user]["onboarding_stage"] = "medications"
         save_sessions(session_dict)
-        return {"text": questions["medications"]}
+
+        med_examples = ""
+        if session_dict[user]["condition"] == "Crohn's":
+            med_examples = "aminosalicylates, corticosteroids, immunomodulators"
+        elif session_dict[user]["condition"] == "Type II Diabetes":
+            med_examples = "metformin, sulfonylureas, insulin"
+
+        return {"text": questions["medications"] + f" (e.g. {med_examples})"}
 
     elif stage == "medications":
         session_dict[user]["medications"] = [med.strip() for med in message.split(",")]
@@ -453,7 +452,7 @@ def llm_daily(message, user, session_dict):
         response_obj["text"] = f"📧 Email successfully sent to your doctor at {session_dict[user]["emergency_email"]}!\n\nIf there's anything else you need, don't hesitate to ask! 😊"
         
         session_dict[user]['email_subject'] = session_dict[user]['email_content'] = ""
-        session_dict[user].get("onboarding_stage") == "general"
+        session_dict[user].get("onboarding_stage") = "general"
 
 
     # Append Quit button to every message
@@ -615,12 +614,7 @@ def main():
     response = ""
     if session_dict[user]["onboarding_stage"] != "done":
         response = first_interaction(message, user, session_dict)
-
-    elif session_dict[user]["onboarding_stage"] == "general":
-        if session_dict[user].get("onboarding_stage") == "done":
-            response = llm_general(message, user, session_dict)
-        else:
-            response = {"text": "Please complete onboarding before asking general questions."}
+        session_dict[user]["history"] = 1
 
     elif message.lower() == "weekly update":
         if session_dict[user].get("onboarding_stage") == "done":
@@ -630,18 +624,23 @@ def main():
 
     elif message == "Quit daily wellness check" or message == "No_email" or message == "No_confirm":
         # schedule.every().day.at("09:00").do(llm_daily)
-        session_dict[user]["onboarding_stage"] == "general"
+        session_dict[user]["onboarding_stage"] = "general"
         response = {"text": "Alright! That concludes your daily wellness check 😊. If you have any other questions throughout the day, feel free to ask!"}
     
+    elif session_dict[user]["onboarding_stage"] == "general":
+        if session_dict[user].get("onboarding_stage") == "done":
+            response = llm_general(message, user, session_dict)
+        else:
+            response = {"text": "Please complete onboarding before asking general questions."}
+
     elif session_dict[user]["onboarding_stage"] == "daily":
         # schedule.every().day.at("09:00").do(llm_daily)
         response = llm_daily(message, user, session_dict)
-        session_dict[user]["history"] += 1
     
 
     # Save session data at the end of the request
-    # Increment history
     save_sessions(session_dict)
+    session_dict[user]["history"] += 1
 
     return jsonify(response)
 
