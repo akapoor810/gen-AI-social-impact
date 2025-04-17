@@ -618,10 +618,10 @@ def main():
         session_dict[user]["history"] = 1
 
     elif message.lower() == "weekly update":
-        if session_dict[user].get("stage") in onboarding:
-            response = weekly_update_internal(user, session_dict)
-        else:
+        if session_dict[user]["stage"] in onboarding:
             response = {"text": "Please complete onboarding before requesting a weekly update."}
+        else:
+            response = weekly_update_internal(user, session_dict)
 
     elif message == "Quit daily wellness check" or message == "No_email" or message == "No_confirm":
         # schedule.every().day.at("09:00").do(llm_daily)
@@ -629,10 +629,10 @@ def main():
         response = {"text": "Alright! That concludes your daily wellness check 😊. If you have any other questions throughout the day, feel free to ask!"}
     
     elif session_dict[user]["stage"] == "general":
-        if session_dict[user].get("stage") in onboarding:
-            response = llm_general(message, user, session_dict)
-        else:
+        if session_dict[user]["stage"] in onboarding:
             response = {"text": "Please complete onboarding before asking general questions."}
+        else:
+            response = llm_general(message, user, session_dict)
 
     elif session_dict[user]["stage"] == "daily":
         # schedule.every().day.at("09:00").do(llm_daily)
