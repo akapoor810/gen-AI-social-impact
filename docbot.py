@@ -640,8 +640,8 @@ def main():
     
 
     # Save session data at the end of the request
-    save_sessions(session_dict)
     session_dict[user]["history"] += 1
+    save_sessions(session_dict)
 
     return jsonify(response)
 
