@@ -527,7 +527,7 @@ def llm_daily(message, user, session_dict):
     if "daily doses" in response_text:
         buttons = [
             {"type": "button", "text": "Yes", "msg": "Yes, I have taken my daily medication", "msg_in_chat_window": True, "msg_processing_type_": "sendMessage", "button_id": "Yes"},
-            {"type": "button", "text": "Naur", "msg": "No, I have not taken my daily medication yet", "msg_in_chat_window": True, "msg_processing_type_": "sendMessage", "button_id": "No i have not"}
+            {"type": "button", "text": "No", "msg": "No, I have not taken my daily medication yet", "msg_in_chat_window": True, "msg_processing_type_": "sendMessage", "button_id": "No i have not"}
         ]
     
         return {
