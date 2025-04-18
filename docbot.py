@@ -467,8 +467,15 @@ def llm_daily(message, user, session_dict):
     if message == "Quit daily wellness check" or message == "No_email" or message == "No_confirm":
         session_dict[user]["stage"] = "general"
         save_sessions(session_dict)
-        response_obj["text"] = "Alright! That concludes your daily wellness check 😊. If you have any other questions throughout the day, feel free to ask!"
+        buttons = [
+            {"type": "button", "text": "Weekly update", "msg": "Generate my weekly update", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Weekly update"},
+            {"type": "button", "text": "General question", "msg": "I have a general question", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "General question"}
+        ]
     
+        return {
+            "text": f"Alright! That concludes your daily wellness check 😊. If you have any other questions throughout the day, feel free to ask!\nCheck out some of DocBot's other features:",
+            "attachments": [{"collapsed": False,"color": "#e3e3e3", "actions": buttons}]
+        }
 
     # Append Quit button to every message
     if "attachments" not in response_obj:
