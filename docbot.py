@@ -142,8 +142,9 @@ def first_interaction(message, user, session_dict):
 
     questions = {
         "age": "👋 Hey there! I'm DocBot, your friendly health assistant.\n"
-        "I'm here to help you stay on top of your health — from tracking symptoms and sending med reminders 💊 to sharing useful tips 📰.\n"
-        "Since it's your first time chatting with me, let's start with a quick intro questionnaire so I can get to know you better.\n\n"
+        "I'm here to help you stay on top of your health — from tracking symptoms and sending med reminders 💊 to sharing useful tips\n\n"
+        "Since it's your first time chatting with me, let's start with a quick intro questionnaire so I can get to know you better.\n"
+        "If you need to edit an answer at any point, please say 'Restart'.\n\n"
         "🎂 First things first — how old are you?",
         "weight": "⚖️ What's your weight (in kg)?",
         "condition": "🏪 What condition do you have? (Type II Diabetes, Crohn's disease, or both)",
@@ -421,7 +422,7 @@ def llm_daily(message, user, session_dict):
         }
     
 
-    if "Yes_email" in response_text:
+    if message == "Yes_email":
         buttons = [
             {"type": "button", "text": "Generate a summary of my symptoms", "msg": "Draft a detailed formal email with a summary of my symptoms of today", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Generate a summary of my symptoms"},
             {"type": "button", "text": "Ask my doctor for specific medical advice", "msg": "Draft a detailed formal email to ask my doctor for specific medical advice about my symptoms", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Ask my doctor for specific medical advice"},
