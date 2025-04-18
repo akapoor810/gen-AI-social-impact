@@ -606,6 +606,7 @@ def main():
     
     print("Current session dict:", session_dict)
     print("Current user:", user)
+    print("Message: ", message)
 
     # Initialize user session if it doesn't exist
     if user not in session_dict or "restart" in message.lower():
@@ -635,16 +636,22 @@ def main():
     elif message == "Generate my weekly update":
         response = weekly_update_internal(user, session_dict)
 
-    elif message == "I have a general question" or session_dict[user]["stage"] == "general":
-        session_dict[user]["stage"] = "general"
-        save_sessions(session_dict)
-        response = llm_general(message, user, session_dict)
-
-    elif message == "Begin my daily wellness check for today" or session_dict[user]["stage"] == "daily":
+    elif message == "Begin my daily wellness check for today":
         # schedule.every().day.at("09:00").do(llm_daily)
         session_dict[user]["stage"] = "daily"
         save_sessions(session_dict)
         response = llm_daily(message, user, session_dict)
+
+    elif message == "I have a general question":
+        session_dict[user]["stage"] = "general"
+        save_sessions(session_dict)
+        response = llm_general(message, user, session_dict)
+
+    elif session_dict[user]["stage"] == "daily":
+        response = llm_daily(message, user, session_dict)
+
+    elif session_dict[user]["stage"] == "general":
+        response = llm_general(message, user, session_dict)
 
     else:
         buttons = [
