@@ -121,12 +121,21 @@ def weekly_update_internal(user, session_dict):
         results = eval(tool_call)
         output = "\n".join(f"• {item}" for item in results)
         text_response = f"Here is your weekly health content digest\n{tool_call}:\n{output}"
+
+        buttons = [
+            {"type": "button", "text": "Daily wellness check", "msg": "Begin my daily wellness check for today", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Daily wellness check"},
+            {"type": "button", "text": "Weekly update", "msg": "Generate my weekly update", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Weekly update"},
+            {"type": "button", "text": "General question", "msg": "I have a general question", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "General question"}
+        ]
+        
         return {
-            "text": text_response,
+            "text": text_response + "\n\nCheck out some of DocBot's other features:",
             "agent_response": agent_response,
             "executed_tool": tool_call,
-            "results": output
+            "results": output,
+            "attachments": [{"collapsed": False,"color": "#e3e3e3", "actions": buttons}]
         }
+    
     except Exception as e:
         import traceback
         print("❌ Exception during weekly update:")
