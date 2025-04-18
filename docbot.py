@@ -141,11 +141,11 @@ def first_interaction(message, user, session_dict):
     print(f"user condition is: {session_dict[user]["condition"]}")
 
     questions = {
-        "age": "👋 Hey there! I'm DocBot, your friendly health assistant.\n"
-        "I'm here to help you stay on top of your health — from tracking symptoms and sending med reminders 💊 to sharing useful tips\n\n"
+        "start": "👋 Hey there! I'm DocBot, your friendly health assistant.\n"
+        "I'm here to help you stay on top of your health — from tracking symptoms and sending med reminders 💊 to sharing useful tips.\n\n"
         "Since it's your first time chatting with me, let's start with a quick intro questionnaire so I can get to know you better.\n"
-        "If you need to edit an answer at any point, please say 'Restart'.\n\n"
-        "🎂 First things first — how old are you?",
+        "If you need to edit an answer at any point, please say 'Restart'.\n\n",
+        "age": "🎂 First things first — how old are you?",
         "weight": "⚖️ What's your weight (in kg)?",
         "condition": "🏪 What condition do you have? (Type II Diabetes, Crohn's disease, or both)",
         "medications": f"💊 What medications are you currently taking? Please separate each medication with a comma!",
