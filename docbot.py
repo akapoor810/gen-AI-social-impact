@@ -636,13 +636,13 @@ def main():
         response = weekly_update_internal(user, session_dict)
 
     elif message == "I have a general question" or session_dict[user]["stage"] == "general":
-        session_dict[user]["stage"] == "general"
+        session_dict[user]["stage"] = "general"
         save_sessions(session_dict)
         response = llm_general(message, user, session_dict)
 
     elif message == "Begin my daily wellness check for today" or session_dict[user]["stage"] == "daily":
         # schedule.every().day.at("09:00").do(llm_daily)
-        session_dict[user]["stage"] == "daily"
+        session_dict[user]["stage"] = "daily"
         save_sessions(session_dict)
         response = llm_daily(message, user, session_dict)
 
