@@ -282,8 +282,24 @@ def llm_general(message, user, session_dict):
 
     response_text = response.get("response", "⚠️ Sorry, I couldn't process that. Could you rephrase?").strip() if isinstance(response, dict) else response.strip()
 
+    if message == "Quit general question":
+        session_dict[user]["stage"] = ""
+        save_sessions(session_dict)
+        buttons = [
+            {"type": "button", "text": "Daily wellness check", "msg": "Begin my daily wellness check for today", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Daily wellness check"},
+            {"type": "button", "text": "Weekly update", "msg": "Generate my weekly update", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Weekly update"}
+        ]
+    
+        return {
+            "text": f"Exiting general question mode 💬.\nCheck out some of DocBot's other features:",
+            "attachments": [{"collapsed": False,"color": "#e3e3e3", "actions": buttons}]
+        }
+    
     response_obj = {
-        "text": response_text
+        "text": response_text,
+        "attachments": [{"collapsed": False,
+        "color": "#e3e3e3",
+        "actions": [{"type": "button", "text": "Quit general question 🛑", "msg": "Quit general question", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "choose_yes"}]}]
     }
 
     save_sessions(session_dict)
