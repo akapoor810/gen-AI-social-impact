@@ -236,7 +236,7 @@ def first_interaction(message, user, session_dict):
         session_dict[user]["news_pref"] = [message]
         session_dict[user]["stage"] = "daily"
         save_sessions(session_dict)
-        return llm_daily(message, user, session_dict)
+        return llm_daily("Begin my daily wellness check", user, session_dict)
     
 
 
@@ -251,7 +251,7 @@ def llm_general(message, user, session_dict):
         model="4o-mini",
         system=f"""
             You are a general-purpose medical advice LLM designed to help patients
-            with Crohn's Disease and Type II Diabetes.
+            with {session_dict[user]["condition"]}.
         """,
 
         query=message,
