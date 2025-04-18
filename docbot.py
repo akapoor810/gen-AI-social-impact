@@ -123,9 +123,9 @@ def weekly_update_internal(user, session_dict):
         text_response = f"Here is your weekly health content digest\n{tool_call}:\n{output}"
 
         buttons = [
-            {"type": "button", "text": "Daily wellness check", "msg": "Begin my daily wellness check for today", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Daily wellness check"},
-            {"type": "button", "text": "Weekly update", "msg": "Generate my weekly update", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Weekly update"},
-            {"type": "button", "text": "General question", "msg": "I have a general question", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "General question"}
+            {"type": "button", "text": "Daily wellness 📝", "msg": "Begin my daily wellness check for today", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Daily wellness check"},
+            {"type": "button", "text": "Weekly update 🗞️", "msg": "Generate my weekly update", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Weekly update"},
+            {"type": "button", "text": "General question 💬", "msg": "I have a general question", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "General question"}
         ]
         
         return {
@@ -248,9 +248,9 @@ def first_interaction(message, user, session_dict):
         save_sessions(session_dict)
 
         buttons = [
-            {"type": "button", "text": "Daily wellness check", "msg": "Begin my daily wellness check for today", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Daily wellness check"},
-            {"type": "button", "text": "Weekly update", "msg": "Generate my weekly update", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Weekly update"},
-            {"type": "button", "text": "General question", "msg": "I have a general question", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "General question"}
+            {"type": "button", "text": "Daily wellness check 📝", "msg": "Begin my daily wellness check for today", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Daily wellness check"},
+            {"type": "button", "text": "Weekly update 🗞️", "msg": "Generate my weekly update", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Weekly update"},
+            {"type": "button", "text": "General question 💬", "msg": "I have a general question", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "General question"}
         ]
         return {
             "text": f"Onboarding complete! Feel free to explore some of DocBot's other features below.",
@@ -286,8 +286,8 @@ def llm_general(message, user, session_dict):
         session_dict[user]["stage"] = ""
         save_sessions(session_dict)
         buttons = [
-            {"type": "button", "text": "Daily wellness check", "msg": "Begin my daily wellness check for today", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Daily wellness check"},
-            {"type": "button", "text": "Weekly update", "msg": "Generate my weekly update", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Weekly update"}
+            {"type": "button", "text": "Daily wellness check 📝", "msg": "Begin my daily wellness check for today", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Daily wellness check"},
+            {"type": "button", "text": "Weekly update 🗞️", "msg": "Generate my weekly update", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Weekly update"}
         ]
     
         return {
@@ -339,7 +339,7 @@ def llm_daily(message, user, session_dict):
         evaluating their responses, and offering appropriate advice. Maintain a warm, empathetic, and professional tone, 
         and use simple, easy-to-understand language.  
 
-        Step 1: NO MATTER WHAT ALWAYS start every interaction with: "Hi {first_name} 👋! Let's begin your daily wellness check for {session_dict[user]['condition']}. If you'd like to quit your daily check, you can do so at any time.\n📋 First off, have you taken your daily doses of {formatted_meds}?"
+        Step 1: NO MATTER WHAT ALWAYS start every interaction with: "Hi {first_name} 👋! Let's begin your daily wellness check for {session_dict[user]['condition']} 📝. If you'd like to quit your daily check, you can do so at any time.\n📋 First off, have you taken your daily doses of {formatted_meds}?"
         If the user confirms they have taken their medications, move to Step 2.
         Else, remind them to take their medications.
         Step 2: Ask 3 symptom-related questions that are specific to their condition. Start every question with "Question [what number question you're on])". Ask one question at a time, acknowledging and responding to the user's response before posing the next question. If the user has a follow up question, respond to that before posing your next question. Do not ask all the questions at once.
@@ -446,8 +446,8 @@ def llm_daily(message, user, session_dict):
     
     if "daily doses" in response_text:
         buttons = [
-            {"type": "button", "text": "Yes", "msg": "Yes, I have taken my daily medication", "msg_in_chat_window": True, "msg_processing_type_": "sendMessage", "button_id": "Yes"},
-            {"type": "button", "text": "No", "msg": "No, I have not taken my daily medication yet", "msg_in_chat_window": True, "msg_processing_type_": "sendMessage", "button_id": "No i have not"}
+            {"type": "button", "text": "Yes ✅", "msg": "Yes, I have taken my daily medication", "msg_in_chat_window": True, "msg_processing_type_": "sendMessage", "button_id": "Yes"},
+            {"type": "button", "text": "No ❌", "msg": "No, I have not taken my daily medication yet", "msg_in_chat_window": True, "msg_processing_type_": "sendMessage", "button_id": "No i have not"}
         ]
     
         response_obj = {
@@ -492,8 +492,8 @@ def llm_daily(message, user, session_dict):
         session_dict[user]["stage"] = "general"
         save_sessions(session_dict)
         buttons = [
-            {"type": "button", "text": "Weekly update", "msg": "Generate my weekly update", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Weekly update"},
-            {"type": "button", "text": "General question", "msg": "I have a general question", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "General question"}
+            {"type": "button", "text": "Weekly update 🗞️", "msg": "Generate my weekly update", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Weekly update"},
+            {"type": "button", "text": "General question 💬", "msg": "I have a general question", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "General question"}
         ]
     
         return {
@@ -686,9 +686,9 @@ def main():
 
     else:
         buttons = [
-            {"type": "button", "text": "Daily wellness check", "msg": "Begin my daily wellness check for today", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Daily wellness check"},
-            {"type": "button", "text": "Weekly update", "msg": "Generate my weekly update", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Weekly update"},
-            {"type": "button", "text": "General question", "msg": "I have a general question", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "General question"}
+            {"type": "button", "text": "Daily wellness check 📝", "msg": "Begin my daily wellness check for today", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Daily wellness check"},
+            {"type": "button", "text": "Weekly update 🗞️", "msg": "Generate my weekly update", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Weekly update"},
+            {"type": "button", "text": "General question 💬", "msg": "I have a general question", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "General question"}
         ]
     
         first_name = user.split('.')[0].capitalize()
