@@ -447,7 +447,7 @@ def llm_daily(message, user, session_dict):
         ]
     
         response_obj = {
-            "text": "Great! Let me know what you'd like the subject and content of the email to be.\nHere are some email examples you might consider:\n• Generate a summary of my symptoms\n•Ask my doctor for specific medical advice\n•Express interest in scheduling a consultation/appointment",
+            "text": "Great! Let me know what you'd like the subject and content of the email to be.\nHere are some email examples you might consider:\n• Generate a summary of my symptoms\n• Ask my doctor for specific medical advice\n• Express interest in scheduling a consultation/appointment",
             "attachments": [{"collapsed": False,"color": "#e3e3e3","actions": buttons}]
         }
     
@@ -470,7 +470,6 @@ def llm_daily(message, user, session_dict):
         response_obj["text"] = f"📧 Email successfully sent to your doctor at {session_dict[user]["emergency_email"]}!\n\nIf there's anything else you need, don't hesitate to ask! 😊"
         
         session_dict[user]['email_subject'] = session_dict[user]['email_content'] = ""
-        session_dict[user]["stage"] = "general"
 
 
     if message == "Quit daily wellness check" or message == "No_email" or message == "No_confirm":
@@ -494,7 +493,7 @@ def llm_daily(message, user, session_dict):
     response_obj["attachments"].append({
         "collapsed": False,
         "color": "#e3e3e3",
-        "actions": [{"type": "button", "text": "Quit 🛑", "msg": "Quit daily wellness check", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "choose_yes"}]
+        "actions": [{"type": "button", "text": "Quit daily check 🛑", "msg": "Quit daily wellness check", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "choose_yes"}]
     })
 
     save_sessions(session_dict)
