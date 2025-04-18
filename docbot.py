@@ -421,7 +421,6 @@ def llm_daily(message, user, session_dict):
             "attachments": [{"collapsed": False, "color": "#e3e3e3", "actions": buttons}]
         }
     
-
     if message == "Yes_email":
         buttons = [
             {"type": "button", "text": "Generate a summary of my symptoms", "msg": "Draft a detailed formal email with a summary of my symptoms of today", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Generate a summary of my symptoms"},
@@ -455,6 +454,12 @@ def llm_daily(message, user, session_dict):
         session_dict[user]['email_subject'] = session_dict[user]['email_content'] = ""
         session_dict[user]["stage"] = "general"
 
+
+    if message == "Quit daily wellness check" or message == "No_email" or message == "No_confirm":
+        session_dict[user]["stage"] = "general"
+        save_sessions[session_dict]
+        response_obj["text"] = "Alright! That concludes your daily wellness check 😊. If you have any other questions throughout the day, feel free to ask!"
+    
 
     # Append Quit button to every message
     if "attachments" not in response_obj:
@@ -618,28 +623,33 @@ def main():
         response = first_interaction(message, user, session_dict)
         session_dict[user]["history"] = 1
 
-    elif message.lower() == "weekly update":
-        if session_dict[user]["stage"] in onboarding:
-            response = {"text": "Please complete onboarding before requesting a weekly update."}
-        else:
-            response = weekly_update_internal(user, session_dict)
+    elif message == "Generate my weekly update":
+        response = weekly_update_internal(user, session_dict)
 
-    elif message == "Quit daily wellness check" or message == "No_email" or message == "No_confirm":
-        # schedule.every().day.at("09:00").do(llm_daily)
-        session_dict[user]["stage"] = "general"
-        response = {"text": "Alright! That concludes your daily wellness check 😊. If you have any other questions throughout the day, feel free to ask!"}
-    
-    elif session_dict[user]["stage"] == "general":
-        if session_dict[user]["stage"] in onboarding:
-            response = {"text": "Please complete onboarding before asking general questions."}
-        else:
-            response = llm_general(message, user, session_dict)
+    elif message == "I have a general question" or session_dict[user]["stage"] == "general":
+        session_dict[user]["stage"] == "general"
+        save_sessions[session_dict]
+        response = llm_general(message, user, session_dict)
 
-    elif session_dict[user]["stage"] == "daily":
+    elif message == "Begin my daily wellness check for today" or session_dict[user]["stage"] == "daily":
         # schedule.every().day.at("09:00").do(llm_daily)
+        session_dict[user]["stage"] == "daily"
+        save_sessions[session_dict]
         response = llm_daily(message, user, session_dict)
-    
 
+    else:
+        buttons = [
+            {"type": "button", "text": "Daily wellness check", "msg": "Begin my daily wellness check for today", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Daily wellness check"},
+            {"type": "button", "text": "Weekly update", "msg": "Generate my weekly update", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Weekly update"},
+            {"type": "button", "text": "General question", "msg": "I have a general question", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "General question"}
+        ]
+    
+        response = {
+            "text": f"Hi {user}! Welcome back to DocBot. How can I help you today?",
+            "attachments": [{"collapsed": False,"color": "#e3e3e3", "actions": buttons}]
+        }
+    
+    
     # Save session data at the end of the request
     session_dict[user]["history"] += 1
     save_sessions(session_dict)
