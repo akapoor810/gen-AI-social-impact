@@ -272,14 +272,14 @@ def llm_general(message, user, session_dict):
     condition = session_dict[user]["condition"]
 
     # 2) fill in your template
-    system = general_system_template.format(
+    system1 = general_system_template.format(
         condition=condition
     )
 
     # 3) call your LLM with that system prompt
     response = generate(
         model="4o-mini",
-        system=system,
+        system=system1,
         query=message,
         temperature=0.7,
         lastk=session_dict[user]["history"],
@@ -339,7 +339,7 @@ def llm_daily(message, user, session_dict):
         formatted_meds = ", ".join(meds[:-1]) + f", and {meds[-1]}"
 
     # inject into your daily‐system template
-    system = daily_system_template.format(
+    system2 = daily_system_template.format(
         first_name=first_name,
         condition=condition,
         formatted_meds=formatted_meds,
@@ -349,7 +349,7 @@ def llm_daily(message, user, session_dict):
     # now call the LLM
     response = generate(
         model="4o-mini",
-        system=system,
+        system=system2,
         query=message,
         temperature=0.7,
         lastk=session_dict[user]["history"],
