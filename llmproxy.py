@@ -4,8 +4,8 @@ import json
 import requests
 
 # Read proxy config from environment
-end_point = os.environ.get("akapoorendPoint")
-api_key = os.environ.get("akapoorapiKey")
+end_point = os.environ.get("endPoint")
+api_key = os.environ.get("apiKey")
 
 def generate(
 	model: str,
