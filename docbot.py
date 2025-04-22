@@ -13,6 +13,8 @@ from duckduckgo_search import DDGS
 from bs4 import BeautifulSoup
 import requests
 import random
+from instr import daily_system_template, general_system_template
+
 
 app = Flask(__name__)
 
@@ -147,7 +149,7 @@ def weekly_update_internal(user, session_dict):
 ### --- ONBOARDING FUNCTION --- ###
 def first_interaction(message, user, session_dict):
     print("In first interaction")
-    print(f"user condition is: {session_dict[user]["condition"]}")
+    print(f"user condition is: {session_dict[user]['condition']}")
 
     questions = {
         "age": "👋 Hey there! I'm DocBot, your friendly health assistant.\n"
@@ -158,6 +160,7 @@ def first_interaction(message, user, session_dict):
         "weight": "⚖️ What's your weight (in kg)?",
         "condition": "🏪 What condition do you have? (Type II Diabetes, Crohn's disease, or both)",
         "medications": f"💊 What medications are you currently taking? Please separate each medication with a comma!",
+        "doc_name": "👩‍⚕️ What is your doctor's name? Please enter as Last Name, First Name.",
         "emergency_email": "📱 For emergency contact purposes, what is your doctor's email?",
         "news_pref": "📰 Every week, we'll send you weekly health updates that we think you'll find interesting. What format of content would you prefer?"
     }
@@ -216,6 +219,12 @@ def first_interaction(message, user, session_dict):
 
     elif stage == "medications":
         session_dict[user]["medications"] = [med.strip() for med in message.split(",")]
+        session_dict[user]["stage"] = "doc_name"
+        save_sessions(session_dict)
+        return {"text": questions["doc_name"]}
+    
+    elif stage == "doc_name":
+        session_dict[user]["doc_name"] = [name.strip() for name in message.split(",")]
         session_dict[user]["stage"] = "emergency_email"
         save_sessions(session_dict)
         return {"text": questions["emergency_email"]}
@@ -265,21 +274,25 @@ def llm_general(message, user, session_dict):
     """
     print("IN LLM GENERAL")
 
+     # 1. Pull out the session values you need
     sid = session_dict[user]["session_id"]
+    condition = session_dict[user]["condition"]
+
+    # 2) fill in your template
+    system1 = general_system_template.format(
+        condition=condition
+    )
+
+    # 3) call your LLM with that system prompt
     response = generate(
         model="4o-mini",
-        system=f"""
-            You are a general-purpose medical advice LLM designed to help patients
-            with {session_dict[user]["condition"]}.
-        """,
-
+        system=system1,
         query=message,
         temperature=0.7,
         lastk=session_dict[user]["history"],
         session_id=sid,
         rag_usage=False
     )
-
     response_text = response.get("response", "⚠️ Sorry, I couldn't process that. Could you rephrase?").strip() if isinstance(response, dict) else response.strip()
 
     if message == "Quit general question":
@@ -307,9 +320,6 @@ def llm_general(message, user, session_dict):
     return response_obj
 
 
-# TODO: Should we make it clear that the daily wellness check is not meant for follow up questions,
-# it is just meant to track symptoms and general questions can be asked outside of the wellness check?
-
 ### --- DAILY INTERACTION FUNCTION --- ###
 def llm_daily(message, user, session_dict):
     """Handles routine wellness check: 
@@ -321,9 +331,12 @@ def llm_daily(message, user, session_dict):
 
     sid = session_dict[user]["session_id"]
     first_name = user.split('.')[0].capitalize()
-    
+    condition = session_dict[user]["condition"]
+    doc_name = session_dict[user]["doc_name"][0]
+    emergency_email = session_dict[user]["emergency_email"]
     meds = session_dict[user]["medications"]
-    formatted_meds = ""
+
+    # build a nice meds string
     if len(meds) == 1:
         formatted_meds = meds[0]
     elif len(meds) == 2:
@@ -331,47 +344,19 @@ def llm_daily(message, user, session_dict):
     else:
         formatted_meds = ", ".join(meds[:-1]) + f", and {meds[-1]}"
 
+    # inject into your daily‐system template
+    system2 = daily_system_template.format(
+        first_name=first_name,
+        condition=condition,
+        formatted_meds=formatted_meds,
+        doc_name=doc_name,
+        emergency_email=emergency_email
+    )
+
+    # now call the LLM
     response = generate(
         model="4o-mini",
-        system=f"""
-        ### **Role & Purpose**  
-        You are a compassionate and professional **nurse** performing a routine **wellness check** on a patient with {session_dict[user]['condition']}.  
-        Your goal is to **assess the patient's well-being** by asking relevant questions based on their condition, 
-        evaluating their responses, and offering appropriate advice. Maintain a warm, empathetic, and professional tone, 
-        and use simple, easy-to-understand language.  
-
-        Step 1: NO MATTER WHAT ALWAYS start every interaction with: "Hi {first_name} 👋! Let's begin your daily wellness check for {session_dict[user]['condition']} 📝. If you'd like to quit your daily check, you can do so at any time.\n📋 First off, have you taken your daily doses of {formatted_meds}?"
-        If the user confirms they have taken their medications, move to Step 2.
-        Else, remind them to take their medications.
-        Step 2: Ask 3 symptom-related questions that are specific to their condition. Start every question with "Question [what number question you're on])". Ask one question at a time, acknowledging and responding to the user's response before posing the next question. If the user has a follow up question, respond to that before posing your next question. Do not ask all the questions at once.
-        Step 3: After every question, **evaluate the user's response**.
-        - If their symptoms are normal, reassure them and offer general wellness tips.
-        - If their symptoms are abnormal, express concern and provide advice to alleviate discomfort based on your knowledge of their condition.  
-        - Begin every response with your advice with "👩‍⚕️ DocBot's Advice: "
-        - DocBot's advice should not include follow-up questions in addition to the 3 symptom-related questions. Stay focused and on track.
-        - If the symptoms are **severe**, urgent, or risky, gently ask the user if they would like to contact their **emergency contact** (**{session_dict[user]['emergency_email']}**).  
-        - Address any follow-up questions the user might have before moving on to the question.
-        Step 4: After you have concluded asking all 3 questions and answered any follow-up questions from the user, ask, "Would you like to contact your doctor about anything we've discussed, or any other symptoms?"
-        Step 5: Once the user has provided the subject and content parameters of the email, respond with: "Subject of email: [subject]\nContent of email: [content of email]\nPlease confirm if you're ready to send the email to {session_dict[user]["emergency_email"]}".
-
-        ### **Response Guidelines**  
-        - ALWAYS USE EMOJIS 
-        - If the user gets off track, remind them that you are here to assess their well-being and take their current symptoms.
-        - Your main purpose is to record how the user is feeling. If they have follow up questions ask them to ask these questions outside the daily wellness check, and remind them they can Quit out of daily wellness check if they would like.
-        - **Avoid Diagnosis:** Do **not** diagnose conditions—only assess symptoms and offer general wellness advice.  
-        - **Encourage Action:** If symptoms worsen, encourage the user to seek medical help.
-        - All emails you draft should be formal and detailed.
-
-        ### **Example Interactions**  
-        **Scenario 1: User with Type II Diabetes**  
-        🗣 **User:** "I feel a bit dizzy and tired today."  
-        🤖 **Bot:** "Dizziness and fatigue can sometimes occur with diabetes. Have you checked your blood sugar levels? If they are too high or too low, try adjusting your meal or fluid intake accordingly. If dizziness persists, you may want to rest and hydrate. Would you like me to notify your emergency contact, [John Doe]?  
-
-        **Scenario 2: User with Crohn's Disease**  
-        🗣 **User:** "I have been experiencing a lot of abdominal pain and diarrhea today."  
-        🤖 **Bot:** "That sounds uncomfortable. Severe abdominal pain and diarrhea could indicate a Crohn's flare-up. Staying hydrated is important—try drinking electrolyte-rich fluids. If the pain worsens or you notice any bleeding, it might be best to reach out to your doctor. Would you like me to notify your emergency contact, [Sarah Smith]?  
-        """,
-
+        system=system2,
         query=message,
         temperature=0.7,
         lastk=session_dict[user]["history"],
@@ -418,7 +403,7 @@ def llm_daily(message, user, session_dict):
                 print("No revised message found.")
 
         elif "rejected" in qa_response.lower():
-            response_obj["text"] = f"I'm not sure how to evaluate those symptoms. 🙁 Would you like to contact your doctor at {session_dict[user]['emergency_email']}?"
+            response_obj["text"] = f"I'm not sure how to evaluate those symptoms. 🙁 Would you like to contact Dr. {session_dict[user]['doc_name'][0]} at {session_dict[user]['emergency_email']}?"
 
 
     if "would you like to contact your doctor" in response_text.lower():
@@ -484,7 +469,7 @@ def llm_daily(message, user, session_dict):
         subject, content = session_dict[user]['email_subject'], session_dict[user]['email_content']
         send_email(session_dict[user]["emergency_email"], subject, content)
 
-        response_obj["text"] = f"📧 Email successfully sent to your doctor at {session_dict[user]["emergency_email"]}!\n\nIf there's anything else you need, don't hesitate to ask! 😊"
+        response_obj["text"] = f"📧 Email successfully sent to Dr. {session_dict[user]['doc_name'][0]} at {session_dict[user]['emergency_email']}!\n\nIf there's anything else you need, don't hesitate to ask! 😊"
         
         session_dict[user]['email_subject'] = session_dict[user]['email_content'] = ""
 
@@ -628,7 +613,7 @@ def qa_agent(message, agent_response, user, session_dict):
 
 ### --- FLASK ROUTE TO HANDLE USER REQUESTS --- ###
 # """Handles user messages and manages session storage."""
-@app.route('/query', methods=['POST'])
+@app.route('/', methods=['POST'])
 def main():
     data = request.get_json()
     message = data.get("text", "").strip()
