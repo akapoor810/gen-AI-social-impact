@@ -13,7 +13,7 @@ from duckduckgo_search import DDGS
 from bs4 import BeautifulSoup
 import requests
 import random
-from instr.py import daily_system
+from instr.py import daily_system , general_system
 
 app = Flask(__name__)
 
@@ -269,11 +269,7 @@ def llm_general(message, user, session_dict):
     sid = session_dict[user]["session_id"]
     response = generate(
         model="4o-mini",
-        system=f"""
-            You are a general-purpose medical advice LLM designed to help patients
-            with {session_dict[user]["condition"]}.
-        """,
-
+        system= general_system,
         query=message,
         temperature=0.7,
         lastk=session_dict[user]["history"],
@@ -334,7 +330,6 @@ def llm_daily(message, user, session_dict):
     response = generate(
         model="4o-mini",
         system= daily_system,
-
         query=message,
         temperature=0.7,
         lastk=session_dict[user]["history"],
