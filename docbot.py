@@ -13,7 +13,8 @@ from duckduckgo_search import DDGS
 from bs4 import BeautifulSoup
 import requests
 import random
-from instr.py import daily_system , general_system
+from instr import daily_system, general_system
+
 
 app = Flask(__name__)
 
