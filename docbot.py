@@ -268,7 +268,7 @@ def llm_general(message, user, session_dict):
     print("IN LLM GENERAL")
 
      # 1. Pull out the session values you need
-    sid       = session_dict[user]["session_id"]
+    sid = session_dict[user]["session_id"]
     condition = session_dict[user]["condition"]
 
     # 2) fill in your template
@@ -324,11 +324,11 @@ def llm_daily(message, user, session_dict):
     """
     print("IN LLM DAILY")
 
-     sid             = session_dict[user]["session_id"]
-    first_name      = user.split('.')[0].capitalize()
-    condition       = session_dict[user]["condition"]
+    sid = session_dict[user]["session_id"]
+    first_name = user.split('.')[0].capitalize()
+    condition = session_dict[user]["condition"]
     emergency_email = session_dict[user]["emergency_email"]
-    meds            = session_dict[user]["medications"]
+    meds = session_dict[user]["medications"]
 
     # build a nice meds string
     if len(meds) == 1:
