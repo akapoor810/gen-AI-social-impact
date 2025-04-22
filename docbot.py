@@ -267,10 +267,19 @@ def llm_general(message, user, session_dict):
     """
     print("IN LLM GENERAL")
 
+     # 1. Pull out the session values you need
+    sid        = session_dict[user]["session_id"]
+    condition  = session_dict[user]["condition"]
+
+    # 2. Fill in the template
+    general = general_system.format(
+        condition=condition
+    )
+
     sid = session_dict[user]["session_id"]
     response = generate(
         model="4o-mini",
-        system= general_system,
+        system= general,
         query=message,
         temperature=0.7,
         lastk=session_dict[user]["history"],
@@ -316,11 +325,12 @@ def llm_daily(message, user, session_dict):
     """
     print("IN LLM DAILY")
 
-    sid = session_dict[user]["session_id"]
-    first_name = user.split('.')[0].capitalize()
-    
-    meds = session_dict[user]["medications"]
-    formatted_meds = ""
+    first_name     = user.split('.')[0].capitalize()
+    condition      = session_dict[user]['condition']
+    meds           = session_dict[user]['medications']
+    emergency_email= session_dict[user]['emergency_email']
+
+    # build a human‐readable meds string
     if len(meds) == 1:
         formatted_meds = meds[0]
     elif len(meds) == 2:
@@ -328,9 +338,16 @@ def llm_daily(message, user, session_dict):
     else:
         formatted_meds = ", ".join(meds[:-1]) + f", and {meds[-1]}"
 
+        daily = daily_system.format(
+        first_name=first_name,
+        condition=condition,
+        formatted_meds=formatted_meds,
+        emergency_email=emergency_email
+    )
+
     response = generate(
         model="4o-mini",
-        system= daily_system,
+        system= daily,
         query=message,
         temperature=0.7,
         lastk=session_dict[user]["history"],
