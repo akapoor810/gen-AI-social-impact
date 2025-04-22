@@ -149,7 +149,7 @@ def weekly_update_internal(user, session_dict):
 ### --- ONBOARDING FUNCTION --- ###
 def first_interaction(message, user, session_dict):
     print("In first interaction")
-    print(f"user condition is: {session_dict[user]["condition"]}")
+    print(f"user condition is: {session_dict[user]['condition']}")
 
     questions = {
         "age": "👋 Hey there! I'm DocBot, your friendly health assistant.\n"
