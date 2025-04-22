@@ -13,7 +13,7 @@ from duckduckgo_search import DDGS
 from bs4 import BeautifulSoup
 import requests
 import random
-from instr import daily_system, general_system
+from instr import daily_system_template, general_system_template
 
 
 app = Flask(__name__)
@@ -268,25 +268,24 @@ def llm_general(message, user, session_dict):
     print("IN LLM GENERAL")
 
      # 1. Pull out the session values you need
-    sid        = session_dict[user]["session_id"]
-    condition  = session_dict[user]["condition"]
+    sid       = session_dict[user]["session_id"]
+    condition = session_dict[user]["condition"]
 
-    # 2. Fill in the template
-    general = general_system.format(
+    # 2) fill in your template
+    system = general_system_template.format(
         condition=condition
     )
 
-    sid = session_dict[user]["session_id"]
+    # 3) call your LLM with that system prompt
     response = generate(
         model="4o-mini",
-        system= general,
+        system=system,
         query=message,
         temperature=0.7,
         lastk=session_dict[user]["history"],
         session_id=sid,
         rag_usage=False
     )
-
     response_text = response.get("response", "⚠️ Sorry, I couldn't process that. Could you rephrase?").strip() if isinstance(response, dict) else response.strip()
 
     if message == "Quit general question":
@@ -325,12 +324,13 @@ def llm_daily(message, user, session_dict):
     """
     print("IN LLM DAILY")
 
-    first_name     = user.split('.')[0].capitalize()
-    condition      = session_dict[user]['condition']
-    meds           = session_dict[user]['medications']
-    emergency_email= session_dict[user]['emergency_email']
+     sid             = session_dict[user]["session_id"]
+    first_name      = user.split('.')[0].capitalize()
+    condition       = session_dict[user]["condition"]
+    emergency_email = session_dict[user]["emergency_email"]
+    meds            = session_dict[user]["medications"]
 
-    # build a human‐readable meds string
+    # build a nice meds string
     if len(meds) == 1:
         formatted_meds = meds[0]
     elif len(meds) == 2:
@@ -338,16 +338,18 @@ def llm_daily(message, user, session_dict):
     else:
         formatted_meds = ", ".join(meds[:-1]) + f", and {meds[-1]}"
 
-        daily = daily_system.format(
+    # inject into your daily‐system template
+    system = daily_system_template.format(
         first_name=first_name,
         condition=condition,
         formatted_meds=formatted_meds,
         emergency_email=emergency_email
     )
 
+    # now call the LLM
     response = generate(
         model="4o-mini",
-        system= daily,
+        system=system,
         query=message,
         temperature=0.7,
         lastk=session_dict[user]["history"],
@@ -603,7 +605,7 @@ def qa_agent(message, agent_response, user, session_dict):
 
 ### --- FLASK ROUTE TO HANDLE USER REQUESTS --- ###
 # """Handles user messages and manages session storage."""
-@app.route('/query', methods=['POST'])
+@app.route('/', methods=['POST'])
 def main():
     data = request.get_json()
     message = data.get("text", "").strip()
