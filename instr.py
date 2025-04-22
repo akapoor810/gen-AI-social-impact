@@ -1,3 +1,5 @@
+import docbot
+
 daily_system = f"""
         ### **Role & Purpose**  
         You are a compassionate and professional **nurse** performing a routine **wellness check** on a patient with {session_dict[user]['condition']}.  
