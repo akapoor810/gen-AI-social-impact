@@ -443,7 +443,7 @@ def llm_daily(message, user, session_dict):
         subject, content = session_dict[user]['email_subject'], session_dict[user]['email_content']
         send_email(session_dict[user]["emergency_email"], subject, content)
 
-        response_obj["text"] = f"📧 Email successfully sent to your doctor at {session_dict[user]["emergency_email"]}!\n\nIf there's anything else you need, don't hesitate to ask! 😊"
+        response_obj["text"] = f"📧 Email successfully sent to your doctor at {session_dict[user]['emergency_email']}!\n\nIf there's anything else you need, don't hesitate to ask! 😊"
         
         session_dict[user]['email_subject'] = session_dict[user]['email_content'] = ""
 
