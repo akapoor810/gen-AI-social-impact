@@ -648,7 +648,7 @@ def main():
 
 
     response = ""
-    onboarding = ["start", "age", "weight", "condition", "medications", "emergency_email", "news_pref"]
+    onboarding = ["start", "age", "weight", "condition", "medications", "emergency_email", "doc_name", "news_pref"]
     if session_dict[user]["stage"] in onboarding:
         response = first_interaction(message, user, session_dict)
         session_dict[user]["history"] = 1
