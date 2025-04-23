@@ -102,7 +102,7 @@ def weekly_update_internal(message, user, session_dict):
         if session_dict[user]["news_pref"] == "":
             response_text = "📰 Welcome to the weekly update feature!\nEvery week, we'll send you weekly health updates that we think you'll find interesting. What format of content would you prefer?"
         elif session_dict[user]["news_pref"] == "reset":
-            response_text = "📰 Welcome back to weekly update!\nWhat format of content would you prefer?"
+            response_text = "📰 Let's generate your weekly update!\nWhat format of content would you prefer?"
         
         return {
             "text": response_text,
@@ -275,7 +275,7 @@ def first_interaction(message, user, session_dict):
             {"type": "button", "text": "General question 💬", "msg": "I have a general question", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "General question"}
         ]
         return {
-            "text": f"Onboarding complete! Feel free to explore some of DocBot's features below.",
+            "text": f"Onboarding complete!\nExplore some of DocBot's features below.",
             "attachments": [{"collapsed": False,"color": "#e3e3e3", "actions": buttons}]
         }
     
@@ -462,7 +462,7 @@ def llm_daily(message, user, session_dict):
         ]
     
         response_obj = {
-            "text": "Great! Let me know what you'd like the subject and content of the email to be.\nHere are some email examples you might consider:\n• Generate a summary of my symptoms\n• Ask my doctor for specific medical advice\n• Express interest in scheduling a consultation/appointment",
+            "text": "Great! Let me know what you want to discuss in your email.\n\nHere are some content ideas you might consider:\n1️⃣ Generate a summary of my symptoms\n2️⃣ Ask my doctor for specific medical advice\n3️⃣ Express interest in scheduling a consultation/appointment",
             "attachments": [{"collapsed": False,"color": "#e3e3e3","actions": buttons}]
         }
     
@@ -481,10 +481,13 @@ def llm_daily(message, user, session_dict):
     if "Yes_confirm" in message:
         subject, content = session_dict[user]['email_subject'], session_dict[user]['email_content']
         send_email(session_dict[user]["emergency_email"], subject, content)
-
-        response_obj["text"] = f"📧 Email successfully sent to Dr. {session_dict[user]['doc_name'][0]} at {session_dict[user]['emergency_email']}!\n\nIf there's anything else you need, don't hesitate to ask! 😊"
-        
         session_dict[user]['email_subject'] = session_dict[user]['email_content'] = ""
+        save_sessions(session_dict)
+
+        return { 
+            "text": f"📧 Email successfully sent to Dr. {session_dict[user]['doc_name'][0]} at {session_dict[user]['emergency_email']}!\n\nIf there's anything else you need, don't hesitate to ask! 😊",
+            "attachments": [{"collapsed": False, "color": "#e3e3e3", "actions": [{"type": "button", "text": "Quit daily check 🛑", "msg": "Quit daily wellness check", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "choose_yes"}]}]
+        }
 
 
     if message == "Quit daily wellness check" or message == "No_email" or message == "No_confirm":
@@ -659,7 +662,7 @@ def main():
 
 
     response = ""
-    onboarding = ["start", "age", "weight", "condition", "medications", "emergency_email", "doc_name", "news_pref"]
+    onboarding = ["start", "age", "weight", "condition", "medications", "emergency_email", "doc_name"]
     if session_dict[user]["stage"] in onboarding:
         response = first_interaction(message, user, session_dict)
         session_dict[user]["history"] = 1
