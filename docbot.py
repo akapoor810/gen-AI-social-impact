@@ -224,6 +224,8 @@ def first_interaction(message, user, session_dict):
         return {"text": questions["doc_name"]}
     
     elif stage == "doc_name":
+        if "," not in message:
+            return {"text": "❗ Please enter as Last Name, First Name."}
         session_dict[user]["doc_name"] = [name.strip() for name in message.split(",")]
         session_dict[user]["stage"] = "emergency_email"
         save_sessions(session_dict)
