@@ -408,7 +408,7 @@ def llm_daily(message, user, session_dict):
             response_obj["text"] = f"I'm not sure how to evaluate those symptoms. 🙁 Would you like to contact Dr. {session_dict[user]['doc_name'][0]} at {session_dict[user]['emergency_email']}?"
 
 
-    if "would you like to contact your doctor" in response_text.lower():
+    if "would you like to contact Dr." in response_text.lower():
         buttons = [
             {"type": "button", "text": "Yes ✅", "msg": "Yes_email", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "choose_yes"},
             {"type": "button", "text": "No ❌", "msg": "No_email", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "choose_no"}
