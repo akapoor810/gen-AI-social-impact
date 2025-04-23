@@ -223,7 +223,7 @@ def first_interaction(message, user, session_dict):
             {"type": "button", "text": "Type 2 Diabetes", "msg": "Type 2 Diabetes", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "choose_condition_diabetes"}
         ]
         return {
-            "text": "🏪 What condition do you have?",
+            "text": questions["condition"],
             "attachments": [{"collapsed": False, "color": "#e3e3e3", "actions": buttons}]
         }
 
