@@ -470,7 +470,7 @@ def llm_daily(message, user, session_dict):
     if "Please confirm " in response_text:
         buttons = [
             {"type": "button", "text": "Send it! ✅", "msg": "Yes_confirm", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "choose_yes"},
-            {"type": "button", "text": "Don't send... ❌", "msg": "No_confirm", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "choose_no"}
+            {"type": "button", "text": "Continue editing... ✍️", "msg": "I want to edit the email", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "choose_no"}
         ]
     
         response_obj = {
@@ -490,7 +490,7 @@ def llm_daily(message, user, session_dict):
         }
 
 
-    if message == "Quit daily wellness check" or message == "No_email" or message == "No_confirm":
+    if message == "Quit daily wellness check" or message == "No_email":
         session_dict[user]["stage"] = "general"
         save_sessions(session_dict)
         buttons = [
