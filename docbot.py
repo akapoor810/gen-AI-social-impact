@@ -218,6 +218,8 @@ def first_interaction(message, user, session_dict):
         return {"text": questions["medications"] + f" (e.g. {med_examples})"}
 
     elif stage == "medications":
+        # if len(message.split()) > 1 and "," not in message:
+        #     return {"text": "❗ Please separate all medications with commas."}
         session_dict[user]["medications"] = [med.strip() for med in message.split(",")]
         session_dict[user]["stage"] = "doc_name"
         save_sessions(session_dict)
@@ -408,13 +410,13 @@ def llm_daily(message, user, session_dict):
             response_obj["text"] = f"I'm not sure how to evaluate those symptoms. 🙁 Would you like to contact Dr. {session_dict[user]['doc_name'][0]} at {session_dict[user]['emergency_email']}?"
 
 
-    if "would you like to contact Dr." in response_text.lower():
+    if "would you like to contact dr." in response_text.lower():
         buttons = [
             {"type": "button", "text": "Yes ✅", "msg": "Yes_email", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "choose_yes"},
             {"type": "button", "text": "No ❌", "msg": "No_email", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "choose_no"}
         ]
         response_obj = {
-            "text": response_text + "\n" + "👩‍⚕️ Do you want to contact your Doctor?",
+            "text": response_text + "\n" + "👩‍⚕️ Do you want to contact your doctor?",
             "attachments": [{"collapsed": False, "color": "#e3e3e3", "actions": buttons}]
         }
     
