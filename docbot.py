@@ -85,11 +85,36 @@ def agent_weekly_update(user_info, health_info):
 
 
 # --- WEEKLY UPDATE INTERNAL HELPER ---
-def weekly_update_internal(user, session_dict):
+def weekly_update_internal(message, user, session_dict):
     """
     Generate the weekly update for a given user.
     Returns a dictionary with the update results including a "text" key for display.
     """
+    valid_options = ["YouTube", "Instagram Reel", "TikTok", "Research News"]
+    if message == "Generate my weekly update":
+        buttons = [
+            {"type": "button", "text": "🎥 YouTube", "msg": "YouTube", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "youtube_button"},
+            {"type": "button", "text": "📸 IG Reel", "msg": "Instagram Reel", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "insta_button"},
+            {"type": "button", "text": "🎵 TikTok", "msg": "TikTok", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "tiktok_button"},
+            {"type": "button", "text": "🧪 Research", "msg": "Research News", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "research_button"}
+        ]
+
+        if session_dict[user]["news_pref"] == "":
+            response_text = "📰 Welcome to the weekly update feature!\nEvery week, we'll send you weekly health updates that we think you'll find interesting. What format of content would you prefer?"
+        elif session_dict[user]["news_pref"] == "reset":
+            response_text = "📰 Welcome back to the weekly update feature!\nWhat format of content would you prefer?"
+        
+        return {
+            "text": response_text,
+            "attachments": [{"collapsed": False, "color": "#e3e3e3", "actions": buttons}]
+        }
+
+    elif (session_dict[user]["news_pref"] == "" or session_dict[user]["news_pref"] == "reset") and message not in valid_options:
+        return {"text": "Please click one of the buttons above to continue."}
+
+    elif (session_dict[user]["news_pref"] == "" or session_dict[user]["news_pref"] == "reset") and  message in valid_options:
+        session_dict[user]["news_pref"] = message
+    
     user_session = session_dict[user]
     user_info = {
         "name": user,
@@ -123,6 +148,10 @@ def weekly_update_internal(user, session_dict):
         results = eval(tool_call)
         output = "\n".join(f"• {item}" for item in results)
         text_response = f"Here is your weekly health content digest\n{tool_call}:\n{output}"
+        
+        # Reset news preference for next time
+        session_dict[user]["news_pref"] = "reset"
+        save_sessions(session_dict)
 
         buttons = [
             {"type": "button", "text": "Daily wellness 📝", "msg": "Begin my daily wellness check for today", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Daily wellness check"},
@@ -152,17 +181,16 @@ def first_interaction(message, user, session_dict):
     print(f"user condition is: {session_dict[user]['condition']}")
 
     questions = {
-        "age": "👋 Hey there! I'm DocBot, your friendly health assistant.\n"
+        "age": "👋 Hey there! I'm DocBot — your personalized health assistant, here to support people managing Type 2 Diabetes and Crohn's Disease.\n"
         "I'm here to help you stay on top of your health — from tracking symptoms and sending med reminders 💊 to sharing useful tips.\n\n"
         "Since it's your first time chatting with me, let's start with a quick intro questionnaire so I can get to know you better.\n"
         "If you need to edit an answer at any point, please say 'Restart'.\n\n"
-        "🎂 First things first — how old are you?",
+        "🎂 First things first — how old are you? (Please enter a number.)",
         "weight": "⚖️ What's your weight (in kg)?",
-        "condition": "🏪 What condition do you have? (Type II Diabetes, Crohn's disease, or both)",
+        "condition": "🏪 What condition do you have? Please click one of the buttons below (Type 2 Diabetes, Crohn's disease, or both)",
         "medications": f"💊 What medications are you currently taking? Please separate each medication with a comma!",
         "doc_name": "👩‍⚕️ What is your doctor's name? Please enter as Last Name, First Name.",
-        "emergency_email": "📱 For emergency contact purposes, what is your doctor's email?",
-        "news_pref": "📰 Every week, we'll send you weekly health updates that we think you'll find interesting. What format of content would you prefer?"
+        "emergency_email": "📱 For emergency contact purposes, what is your doctor's email?"
     }
 
     stage = session_dict[user].get("stage", "start")
@@ -192,7 +220,7 @@ def first_interaction(message, user, session_dict):
         
         buttons = [
             {"type": "button", "text": "Crohn's", "msg": "Crohn's", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "choose_condition_crohns"},
-            {"type": "button", "text": "Type II Diabetes", "msg": "Type II Diabetes", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "choose_condition_diabetes"}
+            {"type": "button", "text": "Type 2 Diabetes", "msg": "Type 2 Diabetes", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "choose_condition_diabetes"}
         ]
         return {
             "text": "🏪 What condition do you have?",
@@ -200,7 +228,7 @@ def first_interaction(message, user, session_dict):
         }
 
     elif stage == "condition":
-        valid_conditions = ["Crohn's", "Type II Diabetes"]
+        valid_conditions = ["Crohn's", "Type 2 Diabetes"]
 
         if message not in valid_conditions:
             return {"text": "Please click one of the buttons above to continue."}
@@ -212,7 +240,7 @@ def first_interaction(message, user, session_dict):
         med_examples = ""
         if session_dict[user]["condition"] == "Crohn's":
             med_examples = "aminosalicylates, corticosteroids, immunomodulators"
-        elif session_dict[user]["condition"] == "Type II Diabetes":
+        elif session_dict[user]["condition"] == "Type 2 Diabetes":
             med_examples = "metformin, sulfonylureas, insulin"
 
         return {"text": questions["medications"] + f" (e.g. {med_examples})"}
@@ -235,30 +263,10 @@ def first_interaction(message, user, session_dict):
 
     elif stage == "emergency_email":
         session_dict[user]["emergency_email"] = message
-        session_dict[user]["stage"] = "news_pref"
-        save_sessions(session_dict)
-
-        buttons = [
-            {"type": "button", "text": "🎥 YouTube", "msg": "YouTube", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "youtube_button"},
-            {"type": "button", "text": "📸 IG Reel", "msg": "Instagram Reel", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "insta_button"},
-            {"type": "button", "text": "🎵 TikTok", "msg": "TikTok", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "tiktok_button"},
-            {"type": "button", "text": "🧪 Research", "msg": "Research News", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "research_button"}
-        ]
-
-        return {
-            "text": questions["news_pref"],
-            "attachments": [{"collapsed": False, "color": "#e3e3e3", "actions": buttons}]
-        }
-
-    elif stage == "news_pref":
-        valid_options = ["YouTube", "Instagram Reel", "TikTok", "Research News"]
-
-        if message not in valid_options:
-            return {"text": "Please click one of the buttons above to continue."}
-
-        session_dict[user]["news_pref"] = [message]
         session_dict[user]["stage"] = "daily"
         save_sessions(session_dict)
+        # session_dict[user]["stage"] = "news_pref"
+        # save_sessions(session_dict)
 
         buttons = [
             {"type": "button", "text": "Daily wellness check 📝", "msg": "Begin my daily wellness check for today", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Daily wellness check"},
@@ -656,7 +664,7 @@ def main():
         session_dict[user]["history"] = 1
 
     elif message == "Generate my weekly update":
-        response = weekly_update_internal(user, session_dict)
+        response = weekly_update_internal(message, user, session_dict)
 
     elif message == "Begin my daily wellness check for today":
         # schedule.every().day.at("09:00").do(llm_daily)
