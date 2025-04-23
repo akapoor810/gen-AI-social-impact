@@ -666,6 +666,8 @@ def main():
         session_dict[user]["history"] = 1
 
     elif message == "Generate my weekly update":
+        session_dict[user]["stage"] = "weekly"
+        save_sessions(session_dict)
         response = weekly_update_internal(message, user, session_dict)
 
     elif message == "Begin my daily wellness check for today":
@@ -684,6 +686,9 @@ def main():
 
     elif session_dict[user]["stage"] == "general":
         response = llm_general(message, user, session_dict)
+
+    elif session_dict[user]["stage"] == "weekly":
+        response = weekly_update_internal(message, user, session_dict)
 
     else:
         buttons = [
