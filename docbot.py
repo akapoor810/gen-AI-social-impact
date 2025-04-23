@@ -102,7 +102,7 @@ def weekly_update_internal(message, user, session_dict):
         if session_dict[user]["news_pref"] == "":
             response_text = "📰 Welcome to the weekly update feature!\nEvery week, we'll send you weekly health updates that we think you'll find interesting. What format of content would you prefer?"
         elif session_dict[user]["news_pref"] == "reset":
-            response_text = "📰 Welcome back to the weekly update feature!\nWhat format of content would you prefer?"
+            response_text = "📰 Welcome back to weekly update!\nWhat format of content would you prefer?"
         
         return {
             "text": response_text,
@@ -181,13 +181,12 @@ def first_interaction(message, user, session_dict):
     print(f"user condition is: {session_dict[user]['condition']}")
 
     questions = {
-        "age": "👋 Hey there! I'm DocBot — your personalized health assistant, here to support people managing Type 2 Diabetes and Crohn's Disease.\n"
-        "I'm here to help you stay on top of your health — from tracking symptoms and sending med reminders 💊 to sharing useful tips.\n\n"
+        "age": "👋 Hey there! I'm DocBot — your personalized health assistant, here to support people managing Type 2 Diabetes and Crohn's Disease. I'm here to help you stay on top of your health — from tracking symptoms and sending med reminders 💊 to sharing useful tips.\n\n"
         "Since it's your first time chatting with me, let's start with a quick intro questionnaire so I can get to know you better.\n"
         "If you need to edit an answer at any point, please say 'Restart'.\n\n"
         "🎂 First things first — how old are you? (Please enter a number.)",
         "weight": "⚖️ What's your weight (in kg)?",
-        "condition": "🏪 What condition do you have? Please click one of the buttons below (Type 2 Diabetes, Crohn's disease, or both)",
+        "condition": "🏪 What condition do you have? Please click one of the buttons below (Crohn's disease or Type 2 Diabetes)",
         "medications": f"💊 What medications are you currently taking? Please separate each medication with a comma!",
         "doc_name": "👩‍⚕️ What is your doctor's name? Please enter as Last Name, First Name.",
         "emergency_email": "📱 For emergency contact purposes, what is your doctor's email?"
@@ -498,7 +497,7 @@ def llm_daily(message, user, session_dict):
         ]
     
         return {
-            "text": f"Alright! That concludes your daily wellness check 😊. If you have any other questions throughout the day, feel free to ask!\nReturn to DocBot's main menu:",
+            "text": f"That concludes your daily wellness check 😊. If you have any other questions throughout the day, feel free to ask!\nReturn to DocBot's main menu:",
             "attachments": [{"collapsed": False,"color": "#e3e3e3", "actions": buttons}]
         }
 
