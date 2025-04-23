@@ -262,6 +262,8 @@ def first_interaction(message, user, session_dict):
         return {"text": questions["emergency_email"]}
 
     elif stage == "emergency_email":
+        if "@" not in message or "." not in message:
+            return {"text": "❗ Please enter a valid email."}
         session_dict[user]["emergency_email"] = message
         session_dict[user]["stage"] = "daily"
         save_sessions(session_dict)
