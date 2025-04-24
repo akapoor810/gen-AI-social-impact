@@ -114,6 +114,7 @@ def weekly_update_internal(message, user, session_dict):
 
     elif (session_dict[user]["news_pref"] == "" or session_dict[user]["news_pref"] == "reset") and  message in valid_options:
         session_dict[user]["news_pref"] = message
+        save_sessions(session_dict)
     
     user_session = session_dict[user]
     user_info = {
@@ -266,8 +267,6 @@ def first_interaction(message, user, session_dict):
         session_dict[user]["emergency_email"] = message
         session_dict[user]["stage"] = "daily"
         save_sessions(session_dict)
-        # session_dict[user]["stage"] = "news_pref"
-        # save_sessions(session_dict)
 
         buttons = [
             {"type": "button", "text": "Daily wellness check 📝", "msg": "Begin my daily wellness check for today", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Daily wellness check"},
@@ -275,7 +274,7 @@ def first_interaction(message, user, session_dict):
             {"type": "button", "text": "General question 💬", "msg": "I have a general question", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "General question"}
         ]
         return {
-            "text": f"Onboarding complete!\nExplore some of DocBot's features below.",
+            "text": f"Onboarding complete! 🎉\n\nExplore some of DocBot's features below.",
             "attachments": [{"collapsed": False,"color": "#e3e3e3", "actions": buttons}]
         }
     
@@ -425,7 +424,7 @@ def llm_daily(message, user, session_dict):
             {"type": "button", "text": "No ❌", "msg": "No_email", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "choose_no"}
         ]
         response_obj = {
-            "text": response_text + "\n" + "👩‍⚕️ Do you want to contact your doctor?",
+            "text": response_text + "\n" + "📧 Do you want to contact your doctor?",
             "attachments": [{"collapsed": False, "color": "#e3e3e3", "actions": buttons}]
         }
     
@@ -456,9 +455,9 @@ def llm_daily(message, user, session_dict):
     
     if message == "Yes_email":
         buttons = [
-            {"type": "button", "text": "Generate a summary of my symptoms", "msg": "Draft a detailed formal email with a summary of my symptoms of today", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Generate a summary of my symptoms"},
-            {"type": "button", "text": "Ask my doctor for specific medical advice", "msg": "Draft a detailed formal email to ask my doctor for specific medical advice about my symptoms", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Ask my doctor for specific medical advice"},
-            {"type": "button", "text": "Schedule an appointment", "msg": "Draft a detailed formal email to schedule an appointment with my doctor. In the email, ask them for availability and provide them with my current symptoms", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Schedule an appointment"}
+            {"type": "button", "text": "1️⃣ Generate a summary of my symptoms", "msg": "Draft a detailed formal email with a summary of my symptoms of today", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Generate a summary of my symptoms"},
+            {"type": "button", "text": "2️⃣ Ask my doctor for specific medical advice", "msg": "Draft a detailed formal email to ask my doctor for specific medical advice about my symptoms", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Ask my doctor for specific medical advice"},
+            {"type": "button", "text": "3️⃣ Schedule an appointment", "msg": "Draft a detailed formal email to schedule an appointment with my doctor. In the email, ask them for availability and provide them with my current symptoms", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Schedule an appointment"}
         ]
     
         response_obj = {
@@ -470,7 +469,8 @@ def llm_daily(message, user, session_dict):
     if "Please confirm " in response_text:
         buttons = [
             {"type": "button", "text": "Send it! ✅", "msg": "Yes_confirm", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "choose_yes"},
-            {"type": "button", "text": "Continue editing... ✍️", "msg": "I want to edit the email", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "choose_no"}
+            {"type": "button", "text": "Edit subject ✍️", "msg": "I want to edit the subject of the email", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "choose_subject"},
+            {"type": "button", "text": "Edit content ✍️", "msg": "I want to edit the content of the email", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "choose_content"}
         ]
     
         response_obj = {
@@ -666,6 +666,7 @@ def main():
     if session_dict[user]["stage"] in onboarding:
         response = first_interaction(message, user, session_dict)
         session_dict[user]["history"] = 1
+        save_sessions(session_dict)
 
     elif message == "Generate my weekly update":
         session_dict[user]["stage"] = "weekly"

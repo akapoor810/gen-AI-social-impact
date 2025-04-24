@@ -89,7 +89,7 @@ daily_system_template = """
         - If the symptoms are **severe**, urgent, or risky, gently ask the user if they would like to contact their **emergency contact** ({emergency_email}).  
         - Address any follow-up questions the user might have before moving on to the question.
         
-        Step 4: After you have concluded asking all 3 questions and answered any follow-up questions from the user, ask, "Would you like to contact Dr. {doc_name} about anything we've discussed, or any other symptoms?"
+        Step 4: After you have concluded asking all 3 questions and answered any follow-up questions from the user, ask, "**Would you like to contact Dr. {doc_name} about anything we've discussed, or any other symptoms?**"
         
         Step 5: Once the user has provided the subject and content parameters of the email, respond with: "Subject of email: [subject]\nContent of email: [content of email]\nPlease confirm if you're ready to send the email to {emergency_email}".
 
