@@ -161,7 +161,7 @@ def weekly_update_internal(message, user, session_dict):
         ]
         
         return {
-            "text": text_response + "\n\nReturn to DocBot's main menu:",
+            "text": text_response + "\n\n🏠 Return to main menu:",
             "agent_response": agent_response,
             "executed_tool": tool_call,
             "results": output,
@@ -306,26 +306,12 @@ def llm_general(message, user, session_dict):
         rag_usage=False
     )
     response_text = response.get("response", "⚠️ Sorry, I couldn't process that. Could you rephrase?").strip() if isinstance(response, dict) else response.strip()
-
-    if message == "Quit general question":
-        session_dict[user]["stage"] = ""
-        save_sessions(session_dict)
-        buttons = [
-            {"type": "button", "text": "Daily wellness 📝", "msg": "Begin my daily wellness check for today", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Daily wellness check"},
-            {"type": "button", "text": "Weekly update 🗞️", "msg": "Generate my weekly update", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Weekly update"},
-            {"type": "button", "text": "General question 💬", "msg": "I have a general question", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "General question"}
-        ]
-    
-        return {
-            "text": f"Exiting general question mode 💬.\nReturn to DocBot's main menu:",
-            "attachments": [{"collapsed": False,"color": "#e3e3e3", "actions": buttons}]
-        }
     
     response_obj = {
         "text": response_text,
         "attachments": [{"collapsed": False,
         "color": "#e3e3e3",
-        "actions": [{"type": "button", "text": "Quit general question 🛑", "msg": "Quit general question", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "choose_yes"}]}]
+        "actions": [{"type": "button", "text": "Main menu 🏠", "msg": "Return to main menu", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "choose_yes"}]}]
     }
 
     save_sessions(session_dict)
@@ -486,33 +472,19 @@ def llm_daily(message, user, session_dict):
 
         return { 
             "text": f"📧 Email successfully sent to Dr. {session_dict[user]['doc_name'][0]} at {session_dict[user]['emergency_email']}!\n\nIf there's anything else you need, don't hesitate to ask! 😊",
-            "attachments": [{"collapsed": False, "color": "#e3e3e3", "actions": [{"type": "button", "text": "Quit daily check 🛑", "msg": "Quit daily wellness check", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "choose_yes"}]}]
+            "attachments": [{"collapsed": False, "color": "#e3e3e3", "actions": [{"type": "button", "text": "Main menu 🏠", "msg": "Return to main menu", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "choose_yes"}]}]
         }
 
 
-    if message == "Quit daily wellness check" or message == "No_email":
-        session_dict[user]["stage"] = "general"
-        save_sessions(session_dict)
-        buttons = [
-            {"type": "button", "text": "Daily wellness 📝", "msg": "Begin my daily wellness check for today", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Daily wellness check"},
-            {"type": "button", "text": "Weekly update 🗞️", "msg": "Generate my weekly update", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Weekly update"},
-            {"type": "button", "text": "General question 💬", "msg": "I have a general question", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "General question"}
-        ]
-    
-        return {
-            "text": f"That concludes your daily wellness check 😊. If you have any other questions throughout the day, feel free to ask!\nReturn to DocBot's main menu:",
-            "attachments": [{"collapsed": False,"color": "#e3e3e3", "actions": buttons}]
-        }
-
-    # Append Quit button to every message
+    # Append Main menu button to every message
     if "attachments" not in response_obj:
         response_obj["attachments"] = []
 
-    # Ensure the Quit button is added after other buttons
+    # Ensure the Main menu button is added after other buttons
     response_obj["attachments"].append({
         "collapsed": False,
         "color": "#e3e3e3",
-        "actions": [{"type": "button", "text": "Quit daily check 🛑", "msg": "Quit daily wellness check", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "choose_yes"}]
+        "actions": [{"type": "button", "text": "Main menu 🏠", "msg": "Return to main menu", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "choose_yes"}]
     })
 
     save_sessions(session_dict)
@@ -667,6 +639,20 @@ def main():
         response = first_interaction(message, user, session_dict)
         session_dict[user]["history"] = 1
         save_sessions(session_dict)
+
+    elif message == "Return to main menu":
+        session_dict[user]["stage"] = ""
+        save_sessions(session_dict)
+        buttons = [
+            {"type": "button", "text": "Daily wellness 📝", "msg": "Begin my daily wellness check for today", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Daily wellness check"},
+            {"type": "button", "text": "Weekly update 🗞️", "msg": "Generate my weekly update", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Weekly update"},
+            {"type": "button", "text": "General question 💬", "msg": "I have a general question", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "General question"}
+        ]
+    
+        return {
+            "text": f"🏠 DocBot main menu:",
+            "attachments": [{"collapsed": False,"color": "#e3e3e3", "actions": buttons}]
+        }
 
     elif message == "Generate my weekly update":
         session_dict[user]["stage"] = "weekly"
