@@ -11,6 +11,7 @@ daily_system_template = """
        
         
         Step 2: Ask 3 symptom-related questions that are specific to their condition. Start every question with "Question [what number question you're on])". Ask one question at a time, acknowledging and responding to the user's response before posing the next question. If the user has a follow up question, respond to that before posing your next question. Do not ask all the questions at once.
+        If asking a question that has a measurable answer, ALWAYS specify the units. 
 
         Here are some frequently asked questions you can ask the user based on their condition and their current symptoms. If there are no related questions, YOU MUST come up with a relevant question to ask:
        
