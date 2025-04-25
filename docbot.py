@@ -185,7 +185,7 @@ def first_interaction(message, user, session_dict):
         "age": "👋 Hey there! I'm DocBot — your personalized health assistant, here to support people managing Type 2 Diabetes and Crohn's Disease. I'm here to help you stay on top of your health — from tracking symptoms and sending med reminders 💊 to sharing useful tips.\n\n"
         "Since it's your first time chatting with me, let's start with a quick intro questionnaire so I can get to know you better.\n"
         "If you need to edit an answer at any point, please say 'Restart'.\n\n"
-        "🎂 First things first — how old are you? (Please enter a number.)",
+        "🎂 First things first — how old are you? (Please enter ONLY a number)",
         "weight": "⚖️ What's your weight (in kg)?",
         "condition": "🏪 What condition do you have? Please click one of the buttons below (Crohn's disease or Type 2 Diabetes)",
         "medications": f"💊 What medications are you currently taking? Please separate each medication with a comma!",
@@ -202,7 +202,7 @@ def first_interaction(message, user, session_dict):
 
     elif stage == "age":
         if not message.isdigit():
-            return {"text": "❗ Please enter a valid age (a number)."}
+            return {"text": "❗ Please enter a valid age (a number)"}
         session_dict[user]["age"] = int(message)
         session_dict[user]["stage"] = "weight"
         save_sessions(session_dict)
