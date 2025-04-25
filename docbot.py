@@ -247,7 +247,7 @@ def first_interaction(message, user, session_dict):
 
     elif stage == "medications":
         # if len(message.split()) > 1 and "," not in message:
-        #     return {"text": "❗ Please separate all medications with commas."}
+        #     return {"text": "❗ Please separate all medications with commas"}
         session_dict[user]["medications"] = [med.strip() for med in message.split(",")]
         session_dict[user]["stage"] = "doc_name"
         save_sessions(session_dict)
@@ -270,7 +270,7 @@ def first_interaction(message, user, session_dict):
 
         buttons = [
             {"type": "button", "text": "Daily wellness check 📝", "msg": "Begin my daily wellness check for today", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Daily wellness check"},
-            {"type": "button", "text": "Weekly update 🗞️", "msg": "Generate my weekly update", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Weekly update"},
+            {"type": "button", "text": "Weekly update  🗞️", "msg": "Generate my weekly update", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "Weekly update"},
             {"type": "button", "text": "General question 💬", "msg": "I have a general question", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "General question"}
         ]
         return {
