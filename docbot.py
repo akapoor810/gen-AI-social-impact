@@ -206,7 +206,7 @@ def first_interaction(message, user, session_dict):
         session_dict[user]["age"] = int(message)
         session_dict[user]["stage"] = "condition"
         save_sessions(session_dict)
-        return {"text": questions["weight"]}
+        return {"text": questions["condition"]}
 
     # elif stage == "weight":
     #     cleaned = message.lower().replace("kg", "").strip()
