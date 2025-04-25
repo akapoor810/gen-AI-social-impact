@@ -204,19 +204,19 @@ def first_interaction(message, user, session_dict):
         if not message.isdigit():
             return {"text": "❗ Please enter a valid age (a number)"}
         session_dict[user]["age"] = int(message)
-        session_dict[user]["stage"] = "weight"
+        session_dict[user]["stage"] = "condition"
         save_sessions(session_dict)
         return {"text": questions["weight"]}
 
-    elif stage == "weight":
-        cleaned = message.lower().replace("kg", "").strip()
+    # elif stage == "weight":
+    #     cleaned = message.lower().replace("kg", "").strip()
 
-        if not cleaned.replace('.', '', 1).isdigit():
-            return {"text": "❗ Please enter a valid weight (a number in kg)."}
+    #     if not cleaned.replace('.', '', 1).isdigit():
+    #         return {"text": "❗ Please enter a valid weight (a number in kg)."}
         
-        session_dict[user]["weight"] = cleaned
-        session_dict[user]["stage"] = "condition"
-        save_sessions(session_dict)
+    #     session_dict[user]["weight"] = cleaned
+    #     session_dict[user]["stage"] = "condition"
+    #     save_sessions(session_dict)
         
         buttons = [
             {"type": "button", "text": "Crohn's", "msg": "Crohn's", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "choose_condition_crohns"},
