@@ -206,7 +206,15 @@ def first_interaction(message, user, session_dict):
         session_dict[user]["age"] = int(message)
         session_dict[user]["stage"] = "condition"
         save_sessions(session_dict)
-        return {"text": questions["condition"]}
+
+        buttons = [
+            {"type": "button", "text": "Crohn's", "msg": "Crohn's", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "choose_condition_crohns"},
+            {"type": "button", "text": "Type 2 Diabetes", "msg": "Type 2 Diabetes", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "choose_condition_diabetes"}
+        ]
+        return {
+            "text": questions["condition"],
+            "attachments": [{"collapsed": False, "color": "#e3e3e3", "actions": buttons}]
+        }
 
     # elif stage == "weight":
     #     cleaned = message.lower().replace("kg", "").strip()
@@ -217,15 +225,7 @@ def first_interaction(message, user, session_dict):
     #     session_dict[user]["weight"] = cleaned
     #     session_dict[user]["stage"] = "condition"
     #     save_sessions(session_dict)
-        
-        buttons = [
-            {"type": "button", "text": "Crohn's", "msg": "Crohn's", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "choose_condition_crohns"},
-            {"type": "button", "text": "Type 2 Diabetes", "msg": "Type 2 Diabetes", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "choose_condition_diabetes"}
-        ]
-        return {
-            "text": questions["condition"],
-            "attachments": [{"collapsed": False, "color": "#e3e3e3", "actions": buttons}]
-        }
+
 
     elif stage == "condition":
         valid_conditions = ["Crohn's", "Type 2 Diabetes"]
