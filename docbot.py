@@ -151,12 +151,7 @@ def weekly_update_internal(message, user, session_dict):
             "attachments": [{"collapsed": False,"color": "#e3e3e3", "actions": buttons}]
         }
     
-    except Exception as e:
-        import traceback
-        print("❌ Exception during weekly update:")
-        traceback.print_exc()
-        return {"text": f"Error: {str(e)}"}
-
+    
 
 
 ### --- ONBOARDING FUNCTION --- ###
