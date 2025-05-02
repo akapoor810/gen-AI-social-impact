@@ -579,7 +579,7 @@ def qa_agent(message, agent_response, user, session_dict):
 
 ### --- FLASK ROUTE TO HANDLE USER REQUESTS --- ###
 # """Handles user messages and manages session storage."""
-@app.route('/query', methods=['POST'])
+@app.route('/', methods=['POST'])
 def main():
     data = request.get_json()
     message = data.get("text", "").strip()
