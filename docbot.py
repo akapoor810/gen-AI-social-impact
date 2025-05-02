@@ -122,11 +122,11 @@ def weekly_update_internal(message, user, session_dict):
     }
     
 
-        if message in TOOL_MAP:
-        session_dict[user]["news_pref"] = message
-        session_dict[user]["onboarding_stage"] = "done"
-        save_sessions(session_dict)
-        return jsonify(weekly_update_main(user))
+    if message in TOOL_MAP:
+    session_dict[user]["news_pref"] = message
+    session_dict[user]["onboarding_stage"] = "done"
+    save_sessions(session_dict)
+    return jsonify(weekly_update_main(user))
 
 
 
