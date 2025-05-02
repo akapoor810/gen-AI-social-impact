@@ -99,10 +99,10 @@ def weekly_update_internal(message, user, session_dict):
             {"type": "button", "text": "🧪 Research", "msg": "Research News", "msg_in_chat_window": True, "msg_processing_type": "sendMessage", "button_id": "research_button"}
         ]
 
-        if session_dict[user]["news_pref"] == "":
-            response_text = "📰 Welcome to the weekly update feature!\nEvery week, we'll send you weekly health updates that we think you'll find interesting. What format of content would you prefer?"
-        elif session_dict[user]["news_pref"] == "reset":
+        if session_dict[user]["news_pref"] == "reset":
             response_text = "📰 Let's generate your weekly update!\nWhat format of content would you prefer?"
+        else:
+            response_text = "📰 Welcome to the weekly update feature!\nEvery week, we'll send you weekly health updates that we think you'll find interesting. What format of content would you prefer?"
         
         return {
             "text": response_text,
