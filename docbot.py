@@ -51,46 +51,76 @@ def agent_weekly_update(func_name, condition):
         # e.g. None or unexpected type
         return ""
 
-def weekly_update_main(user,session_dict):
+def weekly_update_main(user, session_dict):
     sess = session_dict.get(user)
     if not sess:
-        return {"text": "User not found."}
+        return {"text": "User not found.", "results": []}
 
-    pref = session_dict[user]["news_pref"]
-    condition = sess.get("condition") or session_dict["test_user"]["condition"]
+    pref = sess.get("news_pref") or "Research News"
+    condition = sess.get("condition", "unknown")
     func_name, func = TOOL_MAP.get(pref, ("websearch", websearch))
 
+    # 1) Ask LLM for three search-phrases
     raw = agent_weekly_update(func_name, condition)
+
+    # 2) Clean & filter them
+    lines = [line.strip().strip('"') for line in raw.splitlines()]
     queries = []
-    for line in raw.splitlines():
-        phrase = line.strip().strip('"')
-        if phrase and phrase not in queries:
-            queries.append(phrase)
+    for line in lines:
+        low = line.lower()
+        # must mention the condition, and not be an error or URL
+        if condition.lower() not in low:
+            continue
+        if low.startswith("error") or "http" in low:
+            continue
+        queries.append(line)
+    # 3) If we got nothing valid, fall back to three sensible defaults
+    if not queries:
+        queries = [
+            f"{condition} treatment options",
+            f"{condition} research studies",
+            f"{condition} lifestyle modifications"
+        ]
     queries = queries[:3]
 
+    # 4) Run the searches safely
+    def safe_search(f, q):
+        for _ in range(2):
+            try:
+                res = f(q)
+                if res:
+                    return res
+            except Exception:
+                pass
+            time.sleep(1)
+        return []
+
+    # 5) Assemble results
     results = []
     for q in queries:
-        try:
-            links = func(q)
-            if not links and func_name in PRIMARIES_WITH_FALLBACK:
-                domain = func_name.replace('_search', '') + ".com"
-                links = websearch(f"{q} site:{domain}")
-            top = links[0] if links else "No results found"
-        except Exception as e:
-            top = f"Error fetching results: {e}"
+        links = safe_search(func, q)
+        if not links and func_name in PRIMARIES_WITH_FALLBACK:
+            # fallback to a site-limited websearch
+            fallback_q = f"{q} site:{func_name.replace('_search','')}.com"
+            links = safe_search(websearch, fallback_q)
+        top = links[0] if links else "No results found"
         results.append({"query": q, "link": top})
 
-    while len(results) < 3:
-        results.append({"query": condition, "link": "No call generated"})
+    # 6) Final catch-all
+    if all(r["link"] in ("No results found",) for r in results):
+        basic = safe_search(websearch, condition)
+        rep = basic[0] if basic else "No results"
+        results = [{"query": condition, "link": rep}] * 3
 
-    # build the human-readable lines with function calls
+    # 7) Format the output
     lines = ["Here is your weekly health content digest with 3 unique searches:"]
     for r in results:
-        # func_name is the name of the search function, e.g. "websearch"
         call = f'{func_name}("{r["query"]}")'
         lines.append(f"• {call}: {r['link']}")
     text = "\n".join(lines)
+
     return {"text": text, "results": results}
+
 
 
 # --- WEEKLY UPDATE INTERNAL HELPER ---
