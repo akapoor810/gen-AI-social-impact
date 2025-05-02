@@ -13,68 +13,48 @@ import requests
 import random
 
 #WEEKLY TOOL FUNCTIONS
-# --- TOOL FUNCTIONS ---
 def websearch(query):
     with DDGS() as ddgs:
-        results = ddgs.text(query, max_results=20)
-    links = []
-    for r in results:
-        url = r.get("href") or r.get("url")
-        if not url or "duckduckgo.com" in url:
-            continue
-        links.append(url)
-        if len(links) >= 5:
-            break
-    return links
+        results = ddgs.text(query, max_results=5)
+    return [r["href"] for r in results]
+
+def get_page(url):
+    headers = {"User-Agent": "Mozilla/5.0"}
+    response = requests.get(url, headers=headers)
+    if response.status_code == 200:
+        soup = BeautifulSoup(response.text, "html.parser")
+        # Remove non-content tags for a cleaner text
+        for tag in soup(["script", "style", "header", "footer", "nav", "aside"]):
+            tag.extract()
+        text = soup.get_text(separator=" ", strip=True)
+        return " ".join(text.split())[:1500]
+    return f"Failed to fetch {url}, status code: {response.status_code}"
 
 def youtube_search(query):
-    """
-    Only fetch actual YouTube video URLs matching the query.
-    """
-    # wrap the query in quotes for exact-phrase matching
-    ddg_query = f'site:youtube.com/watch "{query}"'
     with DDGS() as ddgs:
-        results = ddgs.text(ddg_query, max_results=30)
-    links = []
-    for r in results:
-        url = r.get("href") or r.get("url")
-        if url and ("youtube.com/watch" in url or "youtu.be/" in url):
-            links.append(url)
-        if len(links) >= 5:
-            break
-    return links
+        results = ddgs.text(f"{query} site:youtube.com", max_results=5)
+    return [r["href"] for r in results if "youtube.com/watch" in r["href"]]
 
 def tiktok_search(query):
-    """
-    Only fetch TikTok video URLs matching the query.
-    """
-    ddg_query = f'site:tiktok.com/video "{query}"'
     with DDGS() as ddgs:
-        results = ddgs.text(ddg_query, max_results=30)
-    links = []
-    for r in results:
-        url = r.get("href") or r.get("url")
-        if url and "/video/" in url and "tiktok.com" in url:
-            links.append(url)
-        if len(links) >= 5:
-            break
-    return links
+        results = ddgs.text(f"{query} site:tiktok.com", max_results=5)
+    return [r["href"] for r in results if "tiktok.com" in r["href"]]
 
 def instagram_search(query):
-    """
-    Only fetch Instagram Reel or post URLs matching the query.
-    """
-    ddg_query = f'site:instagram.com/reel "{query}"'
+    hashtag = query.replace(" ", "")
     with DDGS() as ddgs:
-        results = ddgs.text(ddg_query, max_results=30)
-    links = []
-    for r in results:
-        url = r.get("href") or r.get("url")
-        if url and "instagram.com" in url and ("/reel/" in url or "/p/" in url):
-            links.append(url)
-        if len(links) >= 5:
-            break
-    return links
+        results = ddgs.text(f"#{hashtag} site:instagram.com", max_results=5)
+    return [r["href"] for r in results if "instagram.com" in r["href"]]
+
+# --- TOOL PARSER ---
+def extract_tool(text):
+    for tool in ["websearch", "get_page", "youtube_search", "tiktok_search", "instagram_search"]:
+        match = re.search(fr'{tool}\([^)]*\)', text)
+        if match:
+            return match.group()
+    
+    return
+
 
 # --- SEND EMAIL FUNCTION ---
 def send_email(dst, subject, content):
