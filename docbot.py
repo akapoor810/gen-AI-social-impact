@@ -18,6 +18,8 @@ from instr import daily_system_template, general_system_template
 
 app = Flask(__name__)
 
+session_dict = load_sessions()
+
 TOOL_MAP = {
     "YouTube": ("youtube_search", youtube_search),
     "TikTok": ("tiktok_search", tiktok_search),
@@ -43,7 +45,7 @@ def agent_weekly_update(func_name, condition):
     )
     return resp.get("response", "")
 
-def weekly_update_main(user):
+def weekly_update_main(user,session_dict):
     sess = session_dict.get(user)
     if not sess:
         return {"text": "User not found."}
@@ -123,10 +125,10 @@ def weekly_update_internal(message, user, session_dict):
     
 
     if message in TOOL_MAP:
-    session_dict[user]["news_pref"] = message
-    session_dict[user]["onboarding_stage"] = "done"
-    save_sessions(session_dict)
-    return jsonify(weekly_update_main(user))
+        session_dict[user]["news_pref"] = message
+        session_dict[user]["onboarding_stage"] = "done"
+        save_sessions(session_dict)
+        return weekly_update_main(user,session_dict)
 
 
 
