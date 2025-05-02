@@ -43,7 +43,13 @@ def agent_weekly_update(func_name, condition):
         session_id="HEALTH_UPDATE_AGENT",
         rag_usage=False
     )
-    return resp.get("response", "")
+    if isinstance(resp, dict):
+        return resp.get("response", "")
+    elif isinstance(resp, str):
+        return resp
+    else:
+        # e.g. None or unexpected type
+        return ""
 
 def weekly_update_main(user,session_dict):
     sess = session_dict.get(user)
