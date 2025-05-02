@@ -18,71 +18,66 @@ from instr import daily_system_template, general_system_template
 
 app = Flask(__name__)
 
+TOOL_MAP = {
+    "YouTube": ("youtube_search", youtube_search),
+    "TikTok": ("tiktok_search", tiktok_search),
+    "Instagram Reel": ("instagram_search", instagram_search),
+    "Research News": ("websearch", websearch)
+}
+PRIMARIES_WITH_FALLBACK = {"youtube_search", "tiktok_search", "instagram_search"}
 
 # --- WEEKLY UPDATE FUNCTION ---
-def agent_weekly_update(user_info, health_info):
-    """
-    Create a system message using the user and health info, then call the LLM agent.
-    The agent returns a tool call (e.g., youtube_search("gut health smoothies")).
-    """
-    system = f"""
-    You are an AI agent designed to handle weekly health content updates for users with specific health conditions.
-
-    In addition to your own intelligence, you are given access to a set of tools that let you fetch personalized health content from various online platforms.
-
-    Your job is to use the right tool to deliver a helpful and engaging content recommendation **based on the user's health condition and preferences**.
-
-    Think step-by-step about which platform is best for this week's update, and then return the correct tool call using the examples provided.
-
-    ONLY respond with a tool call like: youtube_search("gut health smoothies")
-
-    ### USER INFORMATION ###
-    - Name: {user_info.get('name')}
-    - Health condition: {health_info.get('condition')}
-    - Preferred platform: {user_info.get('news_pref')}
-    - Preferred news sources: {", ".join(user_info.get('news_sources', []))}
-
-    ### PROVIDED TOOLS INFORMATION ###
-
-    ##1. Tool to perform a YouTube video search
-    Name: youtube_search
-    Parameters: query
-    Example usage: youtube_search("crohn's anti-inflammatory meals")
-
-    ##2. Tool to search TikTok for short-form video content
-    Name: tiktok_search
-    Parameters: query
-    Example usage: tiktok_search("what I eat with IBS")
-
-    ##3. Tool to search Instagram posts/reels via hashtags
-    Name: instagram_search
-    Parameters: query
-    Example usage: instagram_search("gut healing routine")
-
-    ##4. Tool to perform a websearch using DuckDuckGo
-    Name: websearch
-    Parameters: query
-    Example usage: websearch("best probiotics for gut health site:bbc.com")
-    Example usage: websearch("latest Crohn's breakthroughs site:nytimes.com")
-
-    ONLY respond with one tool call. Do NOT explain or add any extra text.
-    Make your query specific, relevant to the condition, and useful.
-
-    Each time you search, make sure the search query is different from the previous week's content.
-    """
-    response = generate(
-        model='4o-mini',
-        system=system,
-        query="What should I send this user this week?",
-        temperature=0.9,
-        lastk=10,
-        session_id='HEALTH_UPDATE_AGENT',
+def agent_weekly_update(func_name, condition):
+    prompt = (
+        f"Generate exactly three unique search phrases including '{condition}' using only {func_name}."
+        " Return one phrase per line, no code syntax."
+    )
+    resp = generate(
+        model="4o-mini",
+        system=prompt,
+        query=prompt,
+        temperature=0.7,
+        lastk=30,
+        session_id="HEALTH_UPDATE_AGENT",
         rag_usage=False
     )
-    print(f"🔍 Raw agent response: {response}")
-    return response['response']
+    return resp.get("response", "")
 
+def weekly_update_main(user):
+    sess = session_dict.get(user)
+    if not sess:
+        return {"text": "User not found."}
 
+    pref = session_dict[user]["news_pref"]
+    condition = sess.get("condition") or session_dict["test_user"]["condition"]
+    func_name, func = TOOL_MAP.get(pref, ("websearch", websearch))
+
+    raw = agent_weekly_update(func_name, condition)
+    queries = []
+    for line in raw.splitlines():
+        phrase = line.strip().strip('"')
+        if phrase and phrase not in queries:
+            queries.append(phrase)
+    queries = queries[:3]
+
+    results = []
+    for q in queries:
+        try:
+            links = func(q)
+            if not links and func_name in PRIMARIES_WITH_FALLBACK:
+                domain = func_name.replace('_search', '') + ".com"
+                links = websearch(f"{q} site:{domain}")
+            top = links[0] if links else "No results found"
+        except Exception as e:
+            top = f"Error fetching results: {e}"
+        results.append({"query": q, "link": top})
+
+    while len(results) < 3:
+        results.append({"query": condition, "link": "No call generated"})
+
+    text = "Here is your weekly health content digest with 3 unique searches:\n"
+    text += "\n".join(f"• {r['query']}: {r['link']}" for r in results)
+    return {"text": text, "results": results}
 
 # --- WEEKLY UPDATE INTERNAL HELPER ---
 def weekly_update_internal(message, user, session_dict):
@@ -126,30 +121,16 @@ def weekly_update_internal(message, user, session_dict):
         "condition": user_session.get("condition", "unknown condition")
     }
     
-    try:
-        agent_response = agent_weekly_update(user_info, health_info)
-        print(f"✅ Final agent response: {agent_response}")
 
-        tool_call = extract_tool(agent_response)
+        if message in TOOL_MAP:
+        session_dict[user]["news_pref"] = message
+        session_dict[user]["onboarding_stage"] = "done"
+        save_sessions(session_dict)
+        return jsonify(weekly_update_main(user))
 
-        if not tool_call:
-            print("⚠️ No valid tool call found. Using fallback.")
-            condition = health_info.get("condition")
-            pref = user_info.get("news_pref", "Research News").lower()
-            tool_map = {
-                'youtube': f'youtube_search("{condition} tips")',
-                'tiktok': f'tiktok_search("{condition} tips")',
-                'instagram reel': f'instagram_search("{condition} tips")',
-                'research news': f'websearch("{condition} tips")'
-            }
-            key = pref if pref in tool_map else "research news"
-            tool_call = tool_map.get(key)
 
-        print(f"🔁 Final tool to execute: {tool_call}")
-        results = eval(tool_call)
-        output = "\n".join(f"• {item}" for item in results)
-        text_response = f"Here is your weekly health content digest\n{tool_call}:\n{output}"
-        
+
+    
         # Reset news preference for next time
         session_dict[user]["news_pref"] = "reset"
         save_sessions(session_dict)
