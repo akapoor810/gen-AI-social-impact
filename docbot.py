@@ -18,108 +18,69 @@ from instr import daily_system_template, general_system_template
 
 app = Flask(__name__)
 
-session_dict = load_sessions()
-
-TOOL_MAP = {
-    "YouTube": ("youtube_search", youtube_search),
-    "TikTok": ("tiktok_search", tiktok_search),
-    "Instagram Reel": ("instagram_search", instagram_search),
-    "Research News": ("websearch", websearch)
-}
-PRIMARIES_WITH_FALLBACK = {"youtube_search", "tiktok_search", "instagram_search"}
 
 # --- WEEKLY UPDATE FUNCTION ---
-def agent_weekly_update(func_name, condition):
-    prompt = (
-        f"Generate exactly three unique search phrases including '{condition}' using only {func_name}."
-        " Return one phrase per line, no code syntax."
-    )
-    resp = generate(
-        model="4o-mini",
-        system=prompt,
-        query=prompt,
-        temperature=0.7,
-        lastk=30,
-        session_id="HEALTH_UPDATE_AGENT",
+def agent_weekly_update(user_info, health_info):
+    """
+    Create a system message using the user and health info, then call the LLM agent.
+    The agent returns a tool call (e.g., youtube_search("gut health smoothies")).
+    """
+    system = f"""
+    You are an AI agent designed to handle weekly health content updates for users with specific health conditions.
+
+    In addition to your own intelligence, you are given access to a set of tools that let you fetch personalized health content from various online platforms.
+
+    Your job is to use the right tool to deliver a helpful and engaging content recommendation **based on the user's health condition and preferences**.
+
+    Think step-by-step about which platform is best for this week's update, and then return the correct tool call using the examples provided.
+
+    ONLY respond with a tool call like: youtube_search("gut health smoothies")
+
+    ### USER INFORMATION ###
+    - Name: {user_info.get('name')}
+    - Health condition: {health_info.get('condition')}
+    - Preferred platform: {user_info.get('news_pref')}
+    - Preferred news sources: {", ".join(user_info.get('news_sources', []))}
+
+    ### PROVIDED TOOLS INFORMATION ###
+
+    ##1. Tool to perform a YouTube video search
+    Name: youtube_search
+    Parameters: query
+    Example usage: youtube_search("crohn's anti-inflammatory meals")
+
+    ##2. Tool to search TikTok for short-form video content
+    Name: tiktok_search
+    Parameters: query
+    Example usage: tiktok_search("what I eat with IBS")
+
+    ##3. Tool to search Instagram posts/reels via hashtags
+    Name: instagram_search
+    Parameters: query
+    Example usage: instagram_search("gut healing routine")
+
+    ##4. Tool to perform a websearch using DuckDuckGo
+    Name: websearch
+    Parameters: query
+    Example usage: websearch("best probiotics for gut health site:bbc.com")
+    Example usage: websearch("latest Crohn's breakthroughs site:nytimes.com")
+
+    ONLY respond with one tool call. Do NOT explain or add any extra text.
+    Make your query specific, relevant to the condition, and useful.
+
+    Each time you search, make sure the search query is different from the previous week's content.
+    """
+    response = generate(
+        model='4o-mini',
+        system=system,
+        query="What should I send this user this week?",
+        temperature=0.9,
+        lastk=10,
+        session_id='HEALTH_UPDATE_AGENT',
         rag_usage=False
     )
-    if isinstance(resp, dict):
-        return resp.get("response", "")
-    elif isinstance(resp, str):
-        return resp
-    else:
-        # e.g. None or unexpected type
-        return ""
-
-def weekly_update_main(user, session_dict):
-    sess = session_dict.get(user)
-    if not sess:
-        return {"text": "User not found.", "results": []}
-
-    pref = sess.get("news_pref") or "Research News"
-    condition = sess.get("condition", "unknown")
-    func_name, func = TOOL_MAP.get(pref, ("websearch", websearch))
-
-    # 1) Ask LLM for three search-phrases
-    raw = agent_weekly_update(func_name, condition)
-
-    # 2) Clean & filter them
-    lines = [line.strip().strip('"') for line in raw.splitlines()]
-    queries = []
-    for line in lines:
-        low = line.lower()
-        # must mention the condition, and not be an error or URL
-        if condition.lower() not in low:
-            continue
-        if low.startswith("error") or "http" in low:
-            continue
-        queries.append(line)
-    # 3) If we got nothing valid, fall back to three sensible defaults
-    if not queries:
-        queries = [
-            f"{condition} treatment options",
-            f"{condition} research studies",
-            f"{condition} lifestyle modifications"
-        ]
-    queries = queries[:3]
-
-    # 4) Run the searches safely
-    def safe_search(f, q):
-        for _ in range(2):
-            try:
-                res = f(q)
-                if res:
-                    return res
-            except Exception:
-                pass
-            time.sleep(1)
-        return []
-
-    # 5) Assemble results
-    results = []
-    for q in queries:
-        links = safe_search(func, q)
-        if not links and func_name in PRIMARIES_WITH_FALLBACK:
-            # fallback to a site-limited websearch
-            fallback_q = f"{q} site:{func_name.replace('_search','')}.com"
-            links = safe_search(websearch, fallback_q)
-        top = links[0] if links else "No results found"
-        results.append({"query": q, "link": top})
-
-    # 6) Final catch-all
-    if all(r["link"] in ("No results found",) for r in results):
-        basic = safe_search(websearch, condition)
-        rep = basic[0] if basic else "No results"
-        results = [{"query": condition, "link": rep}] * 3
-
-    # 7) Format the output
-    lines = ["Here is your weekly health content digest with 3 unique searches:"]
-    for r in results:
-        call = f'{func_name}("{r["query"]}")'
-        lines.append(f"• {call}: {r['link']}")
-    text = "\n".join(lines)
-
-    return {"text": text, "results": results}
+    print(f"🔍 Raw agent response: {response}")
+    return response['response']
 
 
 
@@ -165,16 +126,30 @@ def weekly_update_internal(message, user, session_dict):
         "condition": user_session.get("condition", "unknown condition")
     }
     
+    try:
+        agent_response = agent_weekly_update(user_info, health_info)
+        print(f"✅ Final agent response: {agent_response}")
 
-    if message in TOOL_MAP:
-        session_dict[user]["news_pref"] = message
-        session_dict[user]["onboarding_stage"] = "done"
-        save_sessions(session_dict)
-        return weekly_update_main(user,session_dict)
+        tool_call = extract_tool(agent_response)
 
+        if not tool_call:
+            print("⚠️ No valid tool call found. Using fallback.")
+            condition = health_info.get("condition")
+            pref = user_info.get("news_pref", "Research News").lower()
+            tool_map = {
+                'youtube': f'youtube_search("{condition} tips")',
+                'tiktok': f'tiktok_search("{condition} tips")',
+                'instagram reel': f'instagram_search("{condition} tips")',
+                'research news': f'websearch("{condition} tips")'
+            }
+            key = pref if pref in tool_map else "research news"
+            tool_call = tool_map.get(key)
 
-
-    
+        print(f"🔁 Final tool to execute: {tool_call}")
+        results = eval(tool_call)
+        output = "\n".join(f"• {item}" for item in results)
+        text_response = f"Here is your weekly health content digest\n{tool_call}:\n{output}"
+        
         # Reset news preference for next time
         session_dict[user]["news_pref"] = "reset"
         save_sessions(session_dict)
@@ -193,7 +168,12 @@ def weekly_update_internal(message, user, session_dict):
             "attachments": [{"collapsed": False,"color": "#e3e3e3", "actions": buttons}]
         }
     
-    
+    except Exception as e:
+        import traceback
+        print("❌ Exception during weekly update:")
+        traceback.print_exc()
+        return {"text": f"Error: {str(e)}"}
+
 
 
 ### --- ONBOARDING FUNCTION --- ###
@@ -253,12 +233,7 @@ def first_interaction(message, user, session_dict):
         if message not in valid_conditions:
             return {"text": "Please click one of the buttons above to continue."}
 
-        # ← no extra space before this, same 8-space indent as the 'if'
         session_dict[user]["condition"] = message
-        try:
-            rag_upload(message, user, session_dict)
-        except Exception as e:
-            print(f"⚠️ RAG upload failed: {e}")
         session_dict[user]["stage"] = "medications"
         save_sessions(session_dict)
 
