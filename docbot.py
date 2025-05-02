@@ -83,9 +83,15 @@ def weekly_update_main(user,session_dict):
     while len(results) < 3:
         results.append({"query": condition, "link": "No call generated"})
 
-    text = "Here is your weekly health content digest with 3 unique searches:\n"
-    text += "\n".join(f"• {r['query']}: {r['link']}" for r in results)
+    # build the human-readable lines with function calls
+    lines = ["Here is your weekly health content digest with 3 unique searches:"]
+    for r in results:
+        # func_name is the name of the search function, e.g. "websearch"
+        call = f'{func_name}("{r["query"]}")'
+        lines.append(f"• {call}: {r['link']}")
+    text = "\n".join(lines)
     return {"text": text, "results": results}
+
 
 # --- WEEKLY UPDATE INTERNAL HELPER ---
 def weekly_update_internal(message, user, session_dict):
