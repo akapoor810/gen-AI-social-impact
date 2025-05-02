@@ -253,14 +253,14 @@ def first_interaction(message, user, session_dict):
         if message not in valid_conditions:
             return {"text": "Please click one of the buttons above to continue."}
 
-         session_dict[user]["condition"] = message
-         # only now that we know the condition do we upload PDFs
-         try:
-             rag_upload(message, user, session_dict)
-         except Exception as e:
-             print(f"⚠️ RAG upload failed: {e}")
-         session_dict[user]["stage"] = "medications"
-         save_sessions(session_dict)
+        # ← no extra space before this, same 8-space indent as the 'if'
+        session_dict[user]["condition"] = message
+        try:
+            rag_upload(message, user, session_dict)
+        except Exception as e:
+            print(f"⚠️ RAG upload failed: {e}")
+        session_dict[user]["stage"] = "medications"
+        save_sessions(session_dict)
 
         med_examples = ""
         if session_dict[user]["condition"] == "Crohn's":
