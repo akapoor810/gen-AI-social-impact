@@ -33,7 +33,7 @@ def agent_weekly_update(user_info, health_info):
 
     Your job is to use the right tool to deliver a helpful and engaging content recommendation **based on the user's health condition and preferences**.
 
-    Think step-by-step about which platform is best for this week's update, and then return the correct tool call using the examples provided.
+    Think step-by-step about which platform is best for this week's update according to the user's preferred platform, and then return the correct tool call using the examples provided.
 
     ONLY respond with a tool call like: youtube_search("gut health smoothies")
 
@@ -74,7 +74,7 @@ def agent_weekly_update(user_info, health_info):
     response = generate(
         model='4o-mini',
         system=system,
-        query="What should I send this user this week?",
+        query=f"What {user_info.get('news_pref')} content should I send the user this week?",
         temperature=0.9,
         lastk=10,
         session_id='HEALTH_UPDATE_AGENT',
