@@ -21,6 +21,7 @@ app = Flask(__name__)
 
 # --- WEEKLY UPDATE FUNCTION ---
 def agent_weekly_update(user_info, health_info):
+    print(user_info.get('name'), health_info.get('condition'), user_info.get('news_pref'), {", ".join(user_info.get('news_sources', []))})
     """
     Create a system message using the user and health info, then call the LLM agent.
     The agent returns a tool call (e.g., youtube_search("gut health smoothies")).
